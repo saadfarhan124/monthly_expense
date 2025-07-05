@@ -12,6 +12,9 @@ import '../../categories/domain/category_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/animated_button.dart';
+import '../../../core/widgets/animated_balance.dart';
+import '../../../core/utils/haptic_feedback.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Function(int)? onNavigateToScreen;
@@ -447,12 +450,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    _formatCurrency(entry.value),
+                  AnimatedBalance(
+                    balance: entry.value,
+                    currency: entry.key,
                     style: AppTextStyles.headlineLarge.copyWith(
                       color: AppColors.onPrimary,
                       fontWeight: FontWeight.bold,
                     ),
+                    showCurrency: false,
                   ),
                 ],
               ),
@@ -485,12 +490,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Text(
-                  _formatCurrency(entry.value),
+                AnimatedBalance(
+                  balance: entry.value,
+                  currency: entry.key,
                   style: AppTextStyles.titleLarge.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
                   ),
+                  showCurrency: false,
                 ),
               ],
             ),
@@ -514,11 +521,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildQuickActionCard(
-                'Add Transaction',
-                Icons.add_circle_outline,
-                AppColors.primary,
-                () {
+              child: AnimatedButton(
+                text: 'Add Transaction',
+                icon: Icons.add_circle_outline,
+                backgroundColor: AppColors.primary,
+                hapticType: HapticFeedbackType.medium,
+                onPressed: () {
                   // Navigate to transactions screen (index 2)
                   widget.onNavigateToScreen?.call(2);
                 },
@@ -526,11 +534,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: _buildQuickActionCard(
-                'Add Account',
-                Icons.account_balance_wallet_outlined,
-                AppColors.success,
-                () {
+              child: AnimatedButton(
+                text: 'Add Account',
+                icon: Icons.account_balance_wallet_outlined,
+                backgroundColor: AppColors.success,
+                hapticType: HapticFeedbackType.medium,
+                onPressed: () {
                   // Navigate to accounts screen (index 1)
                   widget.onNavigateToScreen?.call(1);
                 },
@@ -567,6 +576,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 TextButton.icon(
                   onPressed: () {
                     // Navigate to accounts screen (index 1)
+                    HapticFeedback.light();
                     widget.onNavigateToScreen?.call(1);
                   },
                   icon: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -691,50 +701,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           color: AppColors.onSurfaceVariant,
         ),
       ),
-      trailing: Text(
-        '${account.currency} ${account.balance.toStringAsFixed(0)}',
+      trailing: AnimatedBalance(
+        balance: account.balance,
+        currency: account.currency,
         style: AppTextStyles.titleMedium.copyWith(
           fontWeight: FontWeight.bold,
           color: AppColors.primary,
         ),
+        showCurrency: true,
       ),
     );
   }
 
-  Widget _buildQuickActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.border,
-            width: 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: AppTextStyles.labelMedium.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildRecentActivity(String userId) {
     return Column(
@@ -752,6 +731,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             TextButton.icon(
               onPressed: () {
                 // Navigate to transactions screen (index 2)
+                HapticFeedback.light();
                 widget.onNavigateToScreen?.call(2);
               },
               icon: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -839,13 +819,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  String _formatCurrency(double amount) {
-    if (amount >= 1000000) {
-      return '${(amount / 1000000).toStringAsFixed(1)}M';
-    } else if (amount >= 1000) {
-      return '${(amount / 1000).toStringAsFixed(1)}K';
-    } else {
-      return amount.toStringAsFixed(0);
-    }
-  }
+
 } 
