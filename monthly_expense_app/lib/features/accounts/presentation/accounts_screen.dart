@@ -19,12 +19,14 @@ class _AccountsScreenState extends State<AccountsScreen> {
   bool _showAddForm = false;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _balanceController = TextEditingController();
   String _selectedCurrency = 'USD';
   AccountType _selectedType = AccountType.cash;
 
   @override
   void dispose() {
     _nameController.dispose();
+    _balanceController.dispose();
     super.dispose();
   }
 
@@ -33,26 +35,50 @@ class _AccountsScreenState extends State<AccountsScreen> {
   }
 
   Future<void> _addAccount() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      print('Form validation failed');
+      return;
+    }
+    
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    final account = Account(
-      id: '',
-      name: _nameController.text.trim(),
-      currency: _selectedCurrency,
-      balance: 0.0,
-      type: _selectedType,
-      userId: user.uid,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    await _accountService.addAccount(account);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account added!'), backgroundColor: AppColors.success),
+    if (user == null) {
+      print('No user found');
+      return;
+    }
+    
+    try {
+      final account = Account(
+        id: '',
+        name: _nameController.text.trim(),
+        currency: _selectedCurrency,
+        balance: double.tryParse(_balanceController.text.trim()) ?? 0.0,
+        type: _selectedType,
+        userId: user.uid,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
-      _nameController.clear();
-      setState(() => _showAddForm = false);
+      
+      print('Adding account: ${account.name} with balance: ${account.balance}');
+      await _accountService.addAccount(account);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Account added!'), backgroundColor: AppColors.success),
+        );
+        _nameController.clear();
+        _balanceController.clear();
+        setState(() => _showAddForm = false);
+      }
+    } catch (e) {
+      print('Error adding account: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding account: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -102,6 +128,13 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                 validator: (v) => v == null || v.isEmpty ? 'Enter a name' : null,
                               ),
                               const SizedBox(height: AppSpacing.md),
+                              TextFormField(
+                                controller: _balanceController,
+                                decoration: const InputDecoration(labelText: 'Initial Balance'),
+                                keyboardType: TextInputType.number,
+                                validator: (v) => v == null || v.isEmpty ? 'Enter an initial balance' : null,
+                              ),
+                              const SizedBox(height: AppSpacing.md),
                               Row(
                                 children: [
                                   Expanded(
@@ -134,7 +167,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
                               ),
                               const SizedBox(height: AppSpacing.lg),
                               ElevatedButton(
-                                onPressed: _addAccount,
+                                onPressed: () {
+                                  print('Add account button pressed');
+                                  _addAccount();
+                                },
                                 child: const Text('Add Account'),
                               ),
                             ],

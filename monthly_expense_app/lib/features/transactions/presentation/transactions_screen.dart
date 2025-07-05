@@ -18,7 +18,7 @@ class TransactionsScreen extends StatefulWidget {
 }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
-  final TransactionService _transactionService = TransactionService(TransactionRepository());
+  final TransactionService _transactionService = TransactionService(TransactionRepository(), AccountRepository());
   final AccountService _accountService = AccountService(AccountRepository());
   bool _showAddForm = false;
   final _formKey = GlobalKey<FormState>();
@@ -55,14 +55,26 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    await _transactionService.addTransaction(transaction);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Transaction added!'), backgroundColor: AppColors.success),
-      );
-      _amountController.clear();
-      _descController.clear();
-      setState(() => _showAddForm = false);
+    
+    try {
+      await _transactionService.addTransaction(transaction);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transaction added!'), backgroundColor: AppColors.success),
+        );
+        _amountController.clear();
+        _descController.clear();
+        setState(() => _showAddForm = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 

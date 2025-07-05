@@ -19,7 +19,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final AccountService _accountService = AccountService(AccountRepository());
-  final TransactionService _transactionService = TransactionService(TransactionRepository());
+  final TransactionService _transactionService = TransactionService(TransactionRepository(), AccountRepository());
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           crossAxisCount: 2,
                           crossAxisSpacing: AppSpacing.md,
                           mainAxisSpacing: AppSpacing.md,
-                          childAspectRatio: 1.2, // Reduced aspect ratio to give more height
+                          childAspectRatio: 1.0, // Further reduced aspect ratio to give more height
                         ),
                         itemCount: accounts.length,
                         itemBuilder: (context, index) {
@@ -220,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       );
                     },
                   ),
-                  const SizedBox(height: AppSpacing.xl + 21), // Extra space to prevent overflow
+                  const SizedBox(height: AppSpacing.xl + 45), // Extra space to prevent overflow
                 ],
               ),
             ),
@@ -231,7 +231,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Card(
       color: AppColors.surfaceVariant,
       child: Padding(
-        padding: AppSpacing.paddingMd,
+        padding: const EdgeInsets.all(12), // Reduced padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
