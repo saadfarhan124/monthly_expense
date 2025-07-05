@@ -417,61 +417,69 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       builder: (context, snapshot) {
         final category = snapshot.data;
         
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: category != null 
-                ? Color(int.parse(category.color.replaceAll('#', '0xFF'))).withOpacity(0.1)
-                : amountColor.withOpacity(0.1),
-            child: Text(
-              category?.icon ?? (isExpense ? '📄' : '💰'),
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
-          title: Text(
-            transaction.description.isNotEmpty 
-                ? transaction.description 
-                : (category?.name ?? 'Transaction'),
-            style: AppTextStyles.titleMedium,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                category?.name ?? 'Unknown Category',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.onSurfaceVariant,
+        return FutureBuilder<Account?>(
+          future: _getAccount(transaction.accountId),
+          builder: (context, accountSnapshot) {
+            final account = accountSnapshot.data;
+            final currency = account?.currency ?? 'USD';
+            
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundColor: category != null 
+                    ? Color(int.parse(category.color.replaceAll('#', '0xFF'))).withOpacity(0.1)
+                    : amountColor.withOpacity(0.1),
+                child: Text(
+                  category?.icon ?? (isExpense ? '📄' : '💰'),
+                  style: const TextStyle(fontSize: 16),
                 ),
               ),
-              Text(
-                _formatDate(transaction.date),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
+              title: Text(
+                transaction.description.isNotEmpty 
+                    ? transaction.description 
+                    : (category?.name ?? 'Transaction'),
+                style: AppTextStyles.titleMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$amountPrefix\$${transaction.amount.toStringAsFixed(2)}',
-                style: AppTextStyles.titleMedium.copyWith(
-                  color: amountColor,
-                  fontWeight: FontWeight.w600,
-                ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category?.name ?? 'Unknown Category',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    _formatDate(transaction.date),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
-                onPressed: () => _deleteTransaction(transaction.id),
-                tooltip: 'Delete',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$amountPrefix$currency ${transaction.amount.toStringAsFixed(2)}',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: amountColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+                    onPressed: () => _deleteTransaction(transaction.id),
+                    tooltip: 'Delete',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -481,6 +489,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     try {
       final categories = await _categoryService.getCategories(FirebaseAuth.instance.currentUser!.uid).first;
       return categories.firstWhere((cat) => cat.id == categoryId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<Account?> _getAccount(String accountId) async {
+    try {
+      final accounts = await _accountService.getAccounts(FirebaseAuth.instance.currentUser!.uid).first;
+      return accounts.firstWhere((acc) => acc.id == accountId);
     } catch (e) {
       return null;
     }
