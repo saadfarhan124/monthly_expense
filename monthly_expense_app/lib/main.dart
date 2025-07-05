@@ -61,11 +61,18 @@ class MainNavScreen extends StatefulWidget {
 
 class _MainNavScreenState extends State<MainNavScreen> {
   int _selectedIndex = 0;
-  static const List<Widget> _screens = [
-    DashboardScreen(),
-    AccountsScreen(),
-    TransactionsScreen(),
-    CategoriesScreen(),
+  
+  void _navigateToScreen(int screenIndex) {
+    setState(() {
+      _selectedIndex = screenIndex;
+    });
+  }
+  
+  List<Widget> get _screens => [
+    DashboardScreen(onNavigateToScreen: _navigateToScreen),
+    const AccountsScreen(),
+    const TransactionsScreen(),
+    const CategoriesScreen(),
   ];
 
   @override

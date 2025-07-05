@@ -14,7 +14,9 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final Function(int)? onNavigateToScreen;
+  
+  const DashboardScreen({super.key, this.onNavigateToScreen});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -71,19 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Category? _getCachedCategory(String categoryId) {
-    try {
-      return _cachedCategories.firstWhere((cat) => cat.id == categoryId);
-    } catch (e) {
-      return null;
-    }
-  }
 
-  String _getPrimaryCurrency() {
-    // Get the most used currency from user's accounts
-    // This is a simplified approach - in a real app you might want to cache this
-    return 'USD'; // Default fallback
-  }
 
   Widget _buildCurrencyFilter() {
     if (!_isAccountsLoaded) {
@@ -233,89 +223,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildAccountCard(Account account) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.border,
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(
-                child: Text(
-                  account.icon,
-                  style: const TextStyle(fontSize: 24),
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    account.name,
-                    style: AppTextStyles.titleLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${account.currency} • ${account.type.name.toUpperCase()}',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${account.currency} ${account.balance.toStringAsFixed(0)}',
-                  style: AppTextStyles.headlineSmall.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryContainer,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    account.type.name.toUpperCase(),
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildTransactionTile(TransactionModel transaction) {
     final isExpense = transaction.type == TransactionType.expense;
@@ -611,7 +519,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Icons.add_circle_outline,
                 AppColors.primary,
                 () {
-                  // TODO: Navigate to add transaction
+                  // Navigate to transactions screen (index 2)
+                  widget.onNavigateToScreen?.call(2);
                 },
               ),
             ),
@@ -622,7 +531,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Icons.account_balance_wallet_outlined,
                 AppColors.success,
                 () {
-                  // TODO: Navigate to add account
+                  // Navigate to accounts screen (index 1)
+                  widget.onNavigateToScreen?.call(1);
                 },
               ),
             ),
@@ -656,7 +566,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 TextButton.icon(
                   onPressed: () {
-                    // TODO: Navigate to accounts screen
+                    // Navigate to accounts screen (index 1)
+                    widget.onNavigateToScreen?.call(1);
                   },
                   icon: const Icon(Icons.arrow_forward_ios, size: 16),
                   label: const Text('View All'),
@@ -840,7 +751,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             TextButton.icon(
               onPressed: () {
-                // TODO: Navigate to all transactions
+                // Navigate to transactions screen (index 2)
+                widget.onNavigateToScreen?.call(2);
               },
               icon: const Icon(Icons.arrow_forward_ios, size: 16),
               label: const Text('View All'),
