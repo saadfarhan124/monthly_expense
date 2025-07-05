@@ -7,6 +7,7 @@ import 'features/auth/presentation/auth_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/accounts/presentation/accounts_screen.dart';
 import 'features/transactions/presentation/transactions_screen.dart';
+import 'features/categories/presentation/categories_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,13 +65,14 @@ class _MainNavScreenState extends State<MainNavScreen> {
     DashboardScreen(),
     AccountsScreen(),
     TransactionsScreen(),
+    CategoriesScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedIndex == 0 ? 'Dashboard' : _selectedIndex == 1 ? 'Accounts' : 'Transactions'),
+        title: Text(_selectedIndex == 0 ? 'Dashboard' : _selectedIndex == 1 ? 'Accounts' : _selectedIndex == 2 ? 'Transactions' : 'Categories'),
         backgroundColor: AppColors.surface,
       ),
       drawer: Drawer(
@@ -128,6 +130,15 @@ class _MainNavScreenState extends State<MainNavScreen> {
               selected: _selectedIndex == 2,
               onTap: () {
                 setState(() => _selectedIndex = 2);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.category_outlined),
+              title: const Text('Categories'),
+              selected: _selectedIndex == 3,
+              onTap: () {
+                setState(() => _selectedIndex = 3);
                 Navigator.pop(context);
               },
             ),
