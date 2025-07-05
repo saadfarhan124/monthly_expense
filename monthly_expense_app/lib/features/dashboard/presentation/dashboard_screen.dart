@@ -373,183 +373,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    'Dashboard',
-                    style: AppTextStyles.headlineLarge.copyWith(
-                      color: AppColors.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Welcome back! Here\'s your financial overview.',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
+                  
+                  // Header Section
+                  _buildHeader(),
                   const SizedBox(height: AppSpacing.xl),
                   
-                  // Stats Cards
-                  _buildStatsSection(user.uid),
+                  // Total Balance Section
+                  _buildBalanceSection(user.uid),
+                  const SizedBox(height: AppSpacing.xl),
+                  
+                  // Spending Analytics Section
+                  _buildSpendingStats(user.uid),
                   const SizedBox(height: AppSpacing.xl),
                   
                   // Accounts Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Your Accounts',
-                        style: AppTextStyles.titleLarge.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: () {
-                          // TODO: Navigate to add account
-                        },
-                        tooltip: 'Add Account',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  
-                  // Accounts List
-                  StreamBuilder<List<Account>>(
-                    stream: _accountService.getAccounts(user.uid),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      
-                      final accounts = snapshot.data ?? [];
-                      if (accounts.isEmpty) {
-                        return Card(
-                          color: AppColors.surfaceVariant,
-                          child: Padding(
-                            padding: AppSpacing.paddingLg,
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.account_balance_wallet_outlined,
-                                  size: 48,
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                Text(
-                                  'No accounts yet',
-                                  style: AppTextStyles.titleMedium.copyWith(
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.sm),
-                                Text(
-                                  'Add your first account to get started',
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    // TODO: Navigate to add account
-                                  },
-                                  icon: const Icon(Icons.add),
-                                  label: const Text('Add Account'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                      
-                      return Column(
-                        children: accounts.map((account) => _buildAccountCard(account)).toList(),
-                      );
-                    },
-                  ),
-                  
+                  _buildAccountsSection(user.uid),
                   const SizedBox(height: AppSpacing.xl),
                   
-                  // Recent Transactions Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Recent Transactions',
-                        style: AppTextStyles.titleLarge.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          // TODO: Navigate to all transactions
-                        },
-                        icon: const Icon(Icons.arrow_forward_ios, size: 16),
-                        label: const Text('View All'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+                  // Quick Actions Section
+                  _buildQuickActions(),
+                  const SizedBox(height: AppSpacing.xl),
                   
-                  // Recent Transactions List
-                  StreamBuilder<List<TransactionModel>>(
-                    stream: _transactionService.getTransactions(user.uid),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      
-                      final transactions = snapshot.data ?? [];
-                      if (transactions.isEmpty) {
-                        return Card(
-                          color: AppColors.surfaceVariant,
-                          child: Padding(
-                            padding: AppSpacing.paddingLg,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.receipt_long_outlined,
-                                  size: 48,
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                Text(
-                                  'No transactions yet',
-                                  style: AppTextStyles.titleMedium.copyWith(
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.sm),
-                                Text(
-                                  'Your recent transactions will appear here',
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                      
-                      // Show only recent transactions (last 5)
-                      final recentTransactions = transactions.take(5).toList();
-                      
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          for (int i = 0; i < recentTransactions.length; i++) ...[
-                            _buildTransactionTile(recentTransactions[i]),
-                            if (i < recentTransactions.length - 1) const Divider(height: 1),
-                          ],
-                        ],
-                      );
-                    },
-                  ),
+                  // Recent Activity Section
+                  _buildRecentActivity(user.uid),
                   const SizedBox(height: AppSpacing.xl + 45), // Extra space to prevent overflow
                 ],
               ),
@@ -557,7 +403,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatsSection(String userId) {
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Dashboard',
+          style: AppTextStyles.headlineLarge.copyWith(
+            color: AppColors.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'Welcome back! Here\'s your financial overview.',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBalanceSection(String userId) {
     return StreamBuilder<List<Account>>(
       stream: _accountService.getAccounts(userId),
       builder: (context, snapshot) {
@@ -586,8 +454,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _buildEmptyBalanceCard()
             else
               _buildBalanceCards(currencyTotals),
-            const SizedBox(height: AppSpacing.lg),
-            _buildSpendingStats(userId),
           ],
         );
       },
@@ -724,6 +590,341 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }).toList(),
       );
     }
+  }
+
+  Widget _buildQuickActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: AppTextStyles.titleLarge.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                'Add Transaction',
+                Icons.add_circle_outline,
+                AppColors.primary,
+                () {
+                  // TODO: Navigate to add transaction
+                },
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: _buildQuickActionCard(
+                'Add Account',
+                Icons.account_balance_wallet_outlined,
+                AppColors.success,
+                () {
+                  // TODO: Navigate to add account
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAccountsSection(String userId) {
+    return StreamBuilder<List<Account>>(
+      stream: _accountService.getAccounts(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        final accounts = snapshot.data ?? [];
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Your Accounts',
+                  style: AppTextStyles.titleLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    // TODO: Navigate to accounts screen
+                  },
+                  icon: const Icon(Icons.arrow_forward_ios, size: 16),
+                  label: const Text('View All'),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            
+            if (accounts.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.border,
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 32,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'No accounts yet',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Add your first account to get started',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.border,
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // Show first 2 accounts in detail
+                    for (int i = 0; i < accounts.length && i < 2; i++) ...[
+                      _buildCompactAccountTile(accounts[i]),
+                      if (i < accounts.length - 1 && i < 1) 
+                        Divider(height: 1, indent: 16, endIndent: 16),
+                    ],
+                    // If more than 2 accounts, show a summary
+                    if (accounts.length > 2)
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.more_horiz,
+                              color: AppColors.onSurfaceVariant,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${accounts.length - 2} more accounts',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCompactAccountTile(Account account) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.primaryContainer,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: Text(
+            account.icon,
+            style: const TextStyle(fontSize: 18),
+          ),
+        ),
+      ),
+      title: Text(
+        account.name,
+        style: AppTextStyles.titleMedium.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        '${account.currency} • ${account.type.name.toUpperCase()}',
+        style: AppTextStyles.bodySmall.copyWith(
+          color: AppColors.onSurfaceVariant,
+        ),
+      ),
+      trailing: Text(
+        '${account.currency} ${account.balance.toStringAsFixed(0)}',
+        style: AppTextStyles.titleMedium.copyWith(
+          fontWeight: FontWeight.bold,
+          color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 80,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.border,
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: AppTextStyles.labelMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentActivity(String userId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Recent Activity',
+              style: AppTextStyles.titleLarge.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                // TODO: Navigate to all transactions
+              },
+              icon: const Icon(Icons.arrow_forward_ios, size: 16),
+              label: const Text('View All'),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        
+        // Recent Transactions List
+        StreamBuilder<List<TransactionModel>>(
+          stream: _transactionService.getTransactions(userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            
+            final transactions = snapshot.data ?? [];
+            if (transactions.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.border,
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.receipt_long_outlined,
+                      size: 32,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'No recent activity',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Your recent transactions will appear here',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
+            
+            // Show only recent transactions (last 3)
+            final recentTransactions = transactions.take(3).toList();
+            
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.border,
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (int i = 0; i < recentTransactions.length; i++) ...[
+                    _buildTransactionTile(recentTransactions[i]),
+                    if (i < recentTransactions.length - 1) 
+                      Divider(height: 1, indent: 16, endIndent: 16),
+                  ],
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
   }
 
   String _formatCurrency(double amount) {
