@@ -249,11 +249,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           return const Center(child: Text('No categories yet.'));
                         }
                         
+                        // Sort categories alphabetically by name
+                        final sortedCategories = List<Category>.from(categories)
+                          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+                        
                         return ListView.separated(
-                          itemCount: categories.length,
+                          itemCount: sortedCategories.length,
                           separatorBuilder: (_, __) => const Divider(),
                           itemBuilder: (context, index) {
-                            final category = categories[index];
+                            final category = sortedCategories[index];
                             return _buildCategoryTile(category);
                           },
                         );
