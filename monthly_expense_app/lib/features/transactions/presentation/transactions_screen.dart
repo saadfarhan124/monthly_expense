@@ -33,11 +33,63 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   String? _selectedAccountId;
   String? _selectedCategoryId;
 
+  // Cache for accounts and categories
+  List<Account> _cachedAccounts = [];
+  List<Category> _cachedCategories = [];
+  bool _isAccountsLoaded = false;
+  bool _isCategoriesLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCachedData();
+  }
+
   @override
   void dispose() {
     _amountController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCachedData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // Load accounts and categories once and cache them
+    _accountService.getAccounts(user.uid).listen((accounts) {
+      if (mounted) {
+        setState(() {
+          _cachedAccounts = accounts;
+          _isAccountsLoaded = true;
+        });
+      }
+    });
+
+    _categoryService.getCategories(user.uid).listen((categories) {
+      if (mounted) {
+        setState(() {
+          _cachedCategories = categories;
+          _isCategoriesLoaded = true;
+        });
+      }
+    });
+  }
+
+  Account? _getCachedAccount(String accountId) {
+    try {
+      return _cachedAccounts.firstWhere((acc) => acc.id == accountId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Category? _getCachedCategory(String categoryId) {
+    try {
+      return _cachedCategories.firstWhere((cat) => cat.id == categoryId);
+    } catch (e) {
+      return null;
+    }
   }
 
   void _toggleAddForm() {
@@ -132,35 +184,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               // Amount Field
-                              StreamBuilder<List<Account>>(
-                                stream: _accountService.getAccounts(user.uid),
-                                builder: (context, snapshot) {
-                                  final accounts = snapshot.data ?? [];
-                                  final selectedAccount = accounts.firstWhere(
-                                    (acc) => acc.id == _selectedAccountId,
-                                    orElse: () => accounts.isNotEmpty ? accounts.first : Account(
-                                      id: '',
-                                      name: '',
-                                      type: AccountType.bank,
-                                      currency: 'USD',
-                                      balance: 0,
-                                      userId: '',
-                                      createdAt: DateTime.now(),
-                                      updatedAt: DateTime.now(),
-                                    ),
-                                  );
-                                  
-                                  return TextFormField(
-                                    controller: _amountController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Amount',
-                                      prefixText: '${selectedAccount.currency} ',
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    validator: (v) => v == null || v.isEmpty ? 'Enter amount' : null,
-                                  );
-                                },
-                              ),
+                              _buildAmountField(),
                               const SizedBox(height: AppSpacing.md),
                               
                               // Description Field
@@ -203,115 +227,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                   ),
                                   const SizedBox(width: AppSpacing.md),
                                   Expanded(
-                                    child: StreamBuilder<List<Account>>(
-                                      stream: _accountService.getAccounts(user.uid),
-                                      builder: (context, snapshot) {
-                                        final accounts = snapshot.data ?? [];
-                                                                                 if (accounts.isEmpty) {
-                                           return DropdownButtonFormField<String>(
-                                             value: null,
-                                             items: [],
-                                             onChanged: (value) {},
-                                             decoration: const InputDecoration(
-                                               labelText: 'Account',
-                                               helperText: 'Add an account first',
-                                             ),
-                                           );
-                                         }
-                                        
-                                        if (_selectedAccountId == null && accounts.isNotEmpty) {
-                                          _selectedAccountId = accounts.first.id;
-                                        }
-                                        
-                                                                                 return DropdownButtonFormField<String>(
-                                           value: _selectedAccountId,
-                                           items: accounts
-                                               .map((acc) => DropdownMenuItem(
-                                                     value: acc.id,
-                                                     child: Row(
-                                                       mainAxisSize: MainAxisSize.min,
-                                                       children: [
-                                                         Text(acc.icon),
-                                                         const SizedBox(width: 8),
-                                                         Flexible(
-                                                           child: Text(
-                                                             acc.name,
-                                                             overflow: TextOverflow.ellipsis,
-                                                           ),
-                                                         ),
-                                                       ],
-                                                     ),
-                                                   ))
-                                               .toList(),
-                                           onChanged: (v) => setState(() => _selectedAccountId = v),
-                                           decoration: const InputDecoration(labelText: 'Account'),
-                                         );
-                                      },
-                                    ),
+                                    child: _buildAccountDropdown(),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: AppSpacing.md),
                               
-                                                            // Category Selection
-                              StreamBuilder<List<Category>>(
-                                stream: _categoryService.getCategories(user.uid),
-                                builder: (context, snapshot) {
-                                  final categories = snapshot.data ?? [];
-                                  if (categories.isEmpty) {
-                                    return DropdownButtonFormField<String>(
-                                      value: null,
-                                      items: [],
-                                      onChanged: (value) {},
-                                      decoration: const InputDecoration(
-                                        labelText: 'Category',
-                                        helperText: 'Add categories first',
-                                      ),
-                                    );
-                                  }
-                                  
-                                  if (_selectedCategoryId == null && categories.isNotEmpty) {
-                                    _selectedCategoryId = categories.first.id;
-                                  }
-                                  
-                                  return DropdownButtonFormField<String>(
-                                    value: _selectedCategoryId,
-                                    items: categories
-                                        .map((cat) => DropdownMenuItem(
-                                              value: cat.id,
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Container(
-                                                    width: 16,
-                                                    height: 16,
-                                                    decoration: BoxDecoration(
-                                                      color: Color(int.parse(cat.color.replaceAll('#', '0xFF'))),
-                                                      borderRadius: BorderRadius.circular(3),
-                                                    ),
-                                                    child: Center(
-                                                      child: Text(
-                                                        cat.icon,
-                                                        style: const TextStyle(fontSize: 10),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Flexible(
-                                                    child: Text(
-                                                      cat.name,
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ))
-                                        .toList(),
-                                    onChanged: (v) => setState(() => _selectedCategoryId = v),
-                                    decoration: const InputDecoration(labelText: 'Category'),
-                                  );
-                                },
-                              ),
+                              // Category Selection
+                              _buildCategoryDropdown(),
                               const SizedBox(height: AppSpacing.lg),
                               ElevatedButton(
                                 onPressed: _addTransaction,
@@ -332,63 +255,63 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         }
                         
                         final transactions = snapshot.data ?? [];
-                                                 if (transactions.isEmpty) {
-                           return Container(
-                             width: double.infinity,
-                             padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
-                             child: Column(
-                               mainAxisAlignment: MainAxisAlignment.center,
-                               children: [
-                                 Container(
-                                   width: 80,
-                                   height: 80,
-                                   decoration: BoxDecoration(
-                                     color: AppColors.surface,
-                                     borderRadius: BorderRadius.circular(40),
-                                     border: Border.all(
-                                       color: AppColors.border,
-                                       width: 1,
-                                     ),
-                                   ),
-                                   child: Icon(
-                                     Icons.receipt_long_outlined,
-                                     size: 36,
-                                     color: AppColors.onSurfaceVariant,
-                                   ),
-                                 ),
-                                 const SizedBox(height: AppSpacing.lg),
-                                 Text(
-                                   'No transactions yet',
-                                   style: AppTextStyles.titleLarge.copyWith(
-                                     color: AppColors.onSurface,
-                                     fontWeight: FontWeight.w600,
-                                   ),
-                                   textAlign: TextAlign.center,
-                                 ),
-                                 const SizedBox(height: AppSpacing.md),
-                                 Text(
-                                   'Start tracking your expenses and income\nby adding your first transaction',
-                                   style: AppTextStyles.bodyMedium.copyWith(
-                                     color: AppColors.onSurfaceVariant,
-                                     height: 1.4,
-                                   ),
-                                   textAlign: TextAlign.center,
-                                 ),
-                                 const SizedBox(height: AppSpacing.xl),
-                                 ElevatedButton.icon(
-                                   onPressed: _toggleAddForm,
-                                   icon: const Icon(Icons.add),
-                                   label: const Text('Add Transaction'),
-                                   style: ElevatedButton.styleFrom(
-                                     backgroundColor: AppColors.primary,
-                                     foregroundColor: AppColors.onPrimary,
-                                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                   ),
-                                 ),
-                               ],
-                             ),
-                           );
-                         }
+                        if (transactions.isEmpty) {
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(40),
+                                    border: Border.all(
+                                      color: AppColors.border,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.receipt_long_outlined,
+                                    size: 36,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.lg),
+                                Text(
+                                  'No transactions yet',
+                                  style: AppTextStyles.titleLarge.copyWith(
+                                    color: AppColors.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                Text(
+                                  'Start tracking your expenses and income\nby adding your first transaction',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.onSurfaceVariant,
+                                    height: 1.4,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: AppSpacing.xl),
+                                ElevatedButton.icon(
+                                  onPressed: _toggleAddForm,
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Add Transaction'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: AppColors.onPrimary,
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
                         
                         return ListView.separated(
                           itemCount: transactions.length,
@@ -407,100 +330,230 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
+  Widget _buildAmountField() {
+    if (!_isAccountsLoaded) {
+      return TextFormField(
+        decoration: const InputDecoration(
+          labelText: 'Amount',
+          prefixText: 'USD ',
+        ),
+        keyboardType: TextInputType.number,
+        enabled: false,
+      );
+    }
+
+    final selectedAccount = _cachedAccounts.firstWhere(
+      (acc) => acc.id == _selectedAccountId,
+      orElse: () => _cachedAccounts.isNotEmpty ? _cachedAccounts.first : Account(
+        id: '',
+        name: '',
+        type: AccountType.bank,
+        currency: 'USD',
+        balance: 0,
+        userId: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+    
+    return TextFormField(
+      controller: _amountController,
+      decoration: InputDecoration(
+        labelText: 'Amount',
+        prefixText: '${selectedAccount.currency} ',
+      ),
+      keyboardType: TextInputType.number,
+      validator: (v) => v == null || v.isEmpty ? 'Enter amount' : null,
+    );
+  }
+
+  Widget _buildAccountDropdown() {
+    if (!_isAccountsLoaded) {
+      return DropdownButtonFormField<String>(
+        value: null,
+        items: [],
+        onChanged: null,
+        decoration: const InputDecoration(
+          labelText: 'Account',
+          helperText: 'Loading accounts...',
+        ),
+      );
+    }
+
+    if (_cachedAccounts.isEmpty) {
+      return DropdownButtonFormField<String>(
+        value: null,
+        items: [],
+        onChanged: null,
+        decoration: const InputDecoration(
+          labelText: 'Account',
+          helperText: 'Add an account first',
+        ),
+      );
+    }
+
+    if (_selectedAccountId == null && _cachedAccounts.isNotEmpty) {
+      _selectedAccountId = _cachedAccounts.first.id;
+    }
+
+    return DropdownButtonFormField<String>(
+      value: _selectedAccountId,
+      items: _cachedAccounts
+          .map((acc) => DropdownMenuItem(
+                value: acc.id,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(acc.icon),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        acc.name,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ))
+          .toList(),
+      onChanged: (v) => setState(() => _selectedAccountId = v),
+      decoration: const InputDecoration(labelText: 'Account'),
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    if (!_isCategoriesLoaded) {
+      return DropdownButtonFormField<String>(
+        value: null,
+        items: [],
+        onChanged: null,
+        decoration: const InputDecoration(
+          labelText: 'Category',
+          helperText: 'Loading categories...',
+        ),
+      );
+    }
+
+    if (_cachedCategories.isEmpty) {
+      return DropdownButtonFormField<String>(
+        value: null,
+        items: [],
+        onChanged: null,
+        decoration: const InputDecoration(
+          labelText: 'Category',
+          helperText: 'Add categories first',
+        ),
+      );
+    }
+
+    if (_selectedCategoryId == null && _cachedCategories.isNotEmpty) {
+      _selectedCategoryId = _cachedCategories.first.id;
+    }
+
+    return DropdownButtonFormField<String>(
+      value: _selectedCategoryId,
+      items: _cachedCategories
+          .map((cat) => DropdownMenuItem(
+                value: cat.id,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Color(int.parse(cat.color.replaceAll('#', '0xFF'))),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Center(
+                        child: Text(
+                          cat.icon,
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        cat.name,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ))
+          .toList(),
+      onChanged: (v) => setState(() => _selectedCategoryId = v),
+      decoration: const InputDecoration(labelText: 'Category'),
+    );
+  }
+
   Widget _buildTransactionTile(TransactionModel transaction) {
     final isExpense = transaction.type == TransactionType.expense;
     final amountColor = isExpense ? AppColors.error : AppColors.success;
     final amountPrefix = isExpense ? '-' : '+';
     
-    return FutureBuilder<Category?>(
-      future: _getCategory(transaction.categoryId),
-      builder: (context, snapshot) {
-        final category = snapshot.data;
-        
-        return FutureBuilder<Account?>(
-          future: _getAccount(transaction.accountId),
-          builder: (context, accountSnapshot) {
-            final account = accountSnapshot.data;
-            final currency = account?.currency ?? 'USD';
-            
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundColor: category != null 
-                    ? Color(int.parse(category.color.replaceAll('#', '0xFF'))).withOpacity(0.1)
-                    : amountColor.withOpacity(0.1),
-                child: Text(
-                  category?.icon ?? (isExpense ? '📄' : '💰'),
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ),
-              title: Text(
-                transaction.description.isNotEmpty 
-                    ? transaction.description 
-                    : (category?.name ?? 'Transaction'),
-                style: AppTextStyles.titleMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category?.name ?? 'Unknown Category',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                  Text(
-                    _formatDate(transaction.date),
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '$amountPrefix$currency ${transaction.amount.toStringAsFixed(2)}',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: amountColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
-                    onPressed: () => _deleteTransaction(transaction.id),
-                    tooltip: 'Delete',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+    // Use cached data
+    final account = _getCachedAccount(transaction.accountId);
+    final category = _getCachedCategory(transaction.categoryId);
+    final currency = account?.currency ?? 'USD';
+    
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: category != null 
+            ? Color(int.parse(category.color.replaceAll('#', '0xFF'))).withOpacity(0.1)
+            : amountColor.withOpacity(0.1),
+        child: Text(
+          category?.icon ?? (isExpense ? '📄' : '💰'),
+          style: const TextStyle(fontSize: 16),
+        ),
+      ),
+      title: Text(
+        transaction.description.isNotEmpty 
+            ? transaction.description 
+            : (category?.name ?? 'Transaction'),
+        style: AppTextStyles.titleMedium,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            category?.name ?? 'Unknown Category',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            _formatDate(transaction.date),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$amountPrefix$currency ${transaction.amount.toStringAsFixed(2)}',
+            style: AppTextStyles.titleMedium.copyWith(
+              color: amountColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+            onPressed: () => _deleteTransaction(transaction.id),
+            tooltip: 'Delete',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+        ],
+      ),
     );
-  }
-
-  Future<Category?> _getCategory(String categoryId) async {
-    try {
-      final categories = await _categoryService.getCategories(FirebaseAuth.instance.currentUser!.uid).first;
-      return categories.firstWhere((cat) => cat.id == categoryId);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<Account?> _getAccount(String accountId) async {
-    try {
-      final accounts = await _accountService.getAccounts(FirebaseAuth.instance.currentUser!.uid).first;
-      return accounts.firstWhere((acc) => acc.id == accountId);
-    } catch (e) {
-      return null;
-    }
   }
 
   String _formatDate(DateTime date) {

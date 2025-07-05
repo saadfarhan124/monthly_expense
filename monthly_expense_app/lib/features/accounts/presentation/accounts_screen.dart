@@ -23,11 +23,36 @@ class _AccountsScreenState extends State<AccountsScreen> {
   String _selectedCurrency = 'USD';
   AccountType _selectedType = AccountType.cash;
 
+  // Cache for accounts
+  List<Account> _cachedAccounts = [];
+  bool _isAccountsLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCachedData();
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _balanceController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCachedData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // Load accounts once and cache them
+    _accountService.getAccounts(user.uid).listen((accounts) {
+      if (mounted) {
+        setState(() {
+          _cachedAccounts = accounts;
+          _isAccountsLoaded = true;
+        });
+      }
+    });
   }
 
   void _toggleAddForm() {
@@ -180,39 +205,37 @@ class _AccountsScreenState extends State<AccountsScreen> {
                     ),
                   const SizedBox(height: AppSpacing.lg),
                   Expanded(
-                    child: StreamBuilder<List<Account>>(
-                      stream: _accountService.getAccounts(user.uid),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
-                        }
-                        final accounts = snapshot.data ?? [];
-                        if (accounts.isEmpty) {
-                          return const Center(child: Text('No accounts yet.'));
-                        }
-                        return ListView.separated(
-                          itemCount: accounts.length,
-                          separatorBuilder: (_, __) => const Divider(),
-                          itemBuilder: (context, i) {
-                            final acc = accounts[i];
-                            return ListTile(
-                              leading: Text(acc.icon, style: const TextStyle(fontSize: 24)),
-                              title: Text(acc.name, style: AppTextStyles.titleMedium),
-                              subtitle: Text('${acc.currency} • ${acc.type.name.toUpperCase()}'),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline, color: AppColors.error),
-                                onPressed: () => _deleteAccount(acc.id),
-                                tooltip: 'Delete',
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                    child: _isAccountsLoaded
+                        ? _buildAccountsList()
+                        : const Center(child: CircularProgressIndicator()),
                   ),
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildAccountsList() {
+    if (_cachedAccounts.isEmpty) {
+      return const Center(child: Text('No accounts yet.'));
+    }
+    
+    return ListView.separated(
+      itemCount: _cachedAccounts.length,
+      separatorBuilder: (_, __) => const Divider(),
+      itemBuilder: (context, i) {
+        final acc = _cachedAccounts[i];
+        return ListTile(
+          leading: Text(acc.icon, style: const TextStyle(fontSize: 24)),
+          title: Text(acc.name, style: AppTextStyles.titleMedium),
+          subtitle: Text('${acc.currency} • ${acc.type.name.toUpperCase()}'),
+          trailing: IconButton(
+            icon: const Icon(Icons.delete_outline, color: AppColors.error),
+            onPressed: () => _deleteAccount(acc.id),
+            tooltip: 'Delete',
+          ),
+        );
+      },
     );
   }
 } 

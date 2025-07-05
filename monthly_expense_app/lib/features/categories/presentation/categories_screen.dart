@@ -22,6 +22,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   String _selectedIcon = '📁';
   String _selectedColor = '#6366F1';
 
+  // Cache for categories
+  List<Category> _cachedCategories = [];
+  bool _isCategoriesLoaded = false;
+
   final List<String> _availableIcons = [
     '🚗', '🏠', '🏢', '🏥', '👨‍👩‍👧‍👦', '👤', '📱', '⛽', '📄', '📁',
     '🍔', '☕', '🎬', '🎵', '📚', '💻', '🎮', '🏃‍♂️', '🧘‍♀️', '✈️',
@@ -38,6 +42,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   void initState() {
     super.initState();
     _initializeCategories();
+    _loadCachedData();
   }
 
   @override
@@ -51,6 +56,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     if (user != null) {
       await _categoryService.initializeDefaultCategories(user.uid);
     }
+  }
+
+  Future<void> _loadCachedData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // Load categories once and cache them
+    _categoryService.getCategories(user.uid).listen((categories) {
+      if (mounted) {
+        setState(() {
+          _cachedCategories = categories;
+          _isCategoriesLoaded = true;
+        });
+      }
+    });
   }
 
   void _toggleAddForm() {
@@ -237,36 +257,28 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     ),
                   const SizedBox(height: AppSpacing.lg),
                   Expanded(
-                    child: StreamBuilder<List<Category>>(
-                      stream: _categoryService.getCategories(user.uid),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
-                        }
-                        
-                        final categories = snapshot.data ?? [];
-                        if (categories.isEmpty) {
-                          return const Center(child: Text('No categories yet.'));
-                        }
-                        
-                        // Sort categories alphabetically by name
-                        final sortedCategories = List<Category>.from(categories)
-                          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-                        
-                        return ListView.separated(
-                          itemCount: sortedCategories.length,
-                          separatorBuilder: (_, __) => const Divider(),
-                          itemBuilder: (context, index) {
-                            final category = sortedCategories[index];
-                            return _buildCategoryTile(category);
-                          },
-                        );
-                      },
-                    ),
+                    child: _isCategoriesLoaded
+                        ? _buildCategoriesList()
+                        : const Center(child: CircularProgressIndicator()),
                   ),
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildCategoriesList() {
+    if (_cachedCategories.isEmpty) {
+      return const Center(child: Text('No categories yet.'));
+    }
+    
+    return ListView.separated(
+      itemCount: _cachedCategories.length,
+      separatorBuilder: (_, __) => const Divider(),
+      itemBuilder: (context, index) {
+        final category = _cachedCategories[index];
+        return _buildCategoryTile(category);
+      },
     );
   }
 
