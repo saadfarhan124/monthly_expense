@@ -239,18 +239,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Text(
               'Total Balance',
-              style: AppTextStyles.titleMedium.copyWith(
+              style: AppTextStyles.titleLarge.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.md,
-              runSpacing: AppSpacing.md,
-              children: currencyTotals.entries.map((entry) => 
-                _buildCurrencyCard(entry.key, entry.value)
-              ).toList(),
-            ),
+            if (currencyTotals.isEmpty)
+              _buildEmptyBalanceCard()
+            else
+              _buildBalanceCards(currencyTotals),
             const SizedBox(height: AppSpacing.lg),
             _buildSpendingStats(userId),
           ],
@@ -259,33 +256,146 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildCurrencyCard(String currency, double total) {
-    return Card(
-      color: AppColors.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+  Widget _buildEmptyBalanceCard() {
+    return Container(
+      width: double.infinity,
+      height: 120,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primaryContainer,
+            AppColors.primaryContainer.withOpacity(0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              currency,
-                             style: AppTextStyles.labelMedium.copyWith(
-                 color: AppColors.onPrimary,
-                 fontWeight: FontWeight.w600,
-               ),
+            Icon(
+              Icons.account_balance_wallet_outlined,
+              color: AppColors.onPrimary,
+              size: 32,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
-              '${total.toStringAsFixed(2)}',
-                             style: AppTextStyles.headlineSmall.copyWith(
-                 color: AppColors.onPrimary,
-                 fontWeight: FontWeight.bold,
-               ),
+              'No accounts yet',
+              style: AppTextStyles.titleMedium.copyWith(
+                color: AppColors.onPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildBalanceCards(Map<String, double> currencyTotals) {
+    if (currencyTotals.length == 1) {
+      final entry = currencyTotals.entries.first;
+      return Container(
+        width: double.infinity,
+        height: 120,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primaryContainer,
+              AppColors.primaryContainer.withOpacity(0.8),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Total Balance',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.onPrimary.withOpacity(0.8),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text(
+                    entry.key,
+                    style: AppTextStyles.headlineLarge.copyWith(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatCurrency(entry.value),
+                    style: AppTextStyles.headlineLarge.copyWith(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      return Column(
+        children: currencyTotals.entries.map((entry) {
+          return Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.border,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  entry.key,
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: AppColors.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  _formatCurrency(entry.value),
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      );
+    }
+  }
+
+  String _formatCurrency(double amount) {
+    if (amount >= 1000000) {
+      return '${(amount / 1000000).toStringAsFixed(1)}M';
+    } else if (amount >= 1000) {
+      return '${(amount / 1000).toStringAsFixed(1)}K';
+    } else {
+      return amount.toStringAsFixed(0);
+    }
   }
 
   Widget _buildSpendingStats(String userId) {
@@ -327,7 +437,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Text(
               'Spending Analytics',
-              style: AppTextStyles.titleMedium.copyWith(
+              style: AppTextStyles.titleLarge.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -354,24 +464,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSpendingCard(String title, double amount, IconData icon) {
-    return Card(
-      color: AppColors.surfaceVariant,
+    return Container(
+      height: 90,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.border,
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.onSurfaceVariant, size: 20),
-            const SizedBox(height: 4),
+            Icon(
+              icon, 
+              color: AppColors.onSurfaceVariant, 
+              size: 18,
+            ),
+            const SizedBox(height: 6),
             Text(
               title,
               style: AppTextStyles.labelSmall.copyWith(
                 color: AppColors.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 2),
             Text(
-              '\$${amount.toStringAsFixed(2)}',
-              style: AppTextStyles.titleMedium.copyWith(
+              '\$${amount.toStringAsFixed(0)}',
+              style: AppTextStyles.titleSmall.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.error,
               ),
@@ -383,40 +507,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildAccountCard(Account account) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      color: AppColors.surfaceVariant,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.border,
+          width: 1,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: AppColors.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(
-                account.icon,
-                style: const TextStyle(fontSize: 24),
+              child: Center(
+                child: Text(
+                  account.icon,
+                  style: const TextStyle(fontSize: 24),
+                ),
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     account.name,
-                    style: AppTextStyles.titleMedium.copyWith(
+                    style: AppTextStyles.titleLarge.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     '${account.currency} • ${account.type.name.toUpperCase()}',
-                    style: AppTextStyles.bodySmall.copyWith(
+                    style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -426,24 +561,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${account.currency} ${account.balance.toStringAsFixed(2)}',
-                  style: AppTextStyles.titleMedium.copyWith(
+                  '${account.currency} ${account.balance.toStringAsFixed(0)}',
+                  style: AppTextStyles.headlineSmall.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
                   ),
                 ),
+                const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     account.type.name.toUpperCase(),
-                                         style: AppTextStyles.labelSmall.copyWith(
-                       color: AppColors.onPrimary,
-                       fontWeight: FontWeight.w600,
-                     ),
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
