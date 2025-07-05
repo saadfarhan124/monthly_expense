@@ -3,22 +3,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_colors.dart';
-import 'core/theme/app_text_styles.dart';
-import 'core/theme/app_spacing.dart';
-import 'shared/widgets/custom_button.dart';
 import 'features/auth/presentation/auth_screen.dart';
+import 'features/dashboard/presentation/dashboard_screen.dart';
+import 'features/accounts/presentation/accounts_screen.dart';
+import 'features/transactions/presentation/transactions_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase
-  try {
-    await Firebase.initializeApp();
-    print('✅ Firebase initialized successfully');
-  } catch (e) {
-    print('❌ Firebase initialization failed: $e');
-  }
-  
+  await Firebase.initializeApp();
   runApp(const MonthlyExpenseApp());
 }
 
@@ -47,194 +39,111 @@ class AuthWrapper extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: AppColors.background,
-            body: Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
-            ),
+            body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
           );
         }
-        
         if (snapshot.hasData && snapshot.data != null) {
-          return const HomePage();
+          return const MainNavScreen();
         }
-        
         return const AuthScreen();
       },
     );
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class MainNavScreen extends StatefulWidget {
+  const MainNavScreen({super.key});
+
+  @override
+  State<MainNavScreen> createState() => _MainNavScreenState();
+}
+
+class _MainNavScreenState extends State<MainNavScreen> {
+  int _selectedIndex = 0;
+  static const List<Widget> _screens = [
+    DashboardScreen(),
+    AccountsScreen(),
+    TransactionsScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text('Monthly Expense Tracker'),
+        title: Text(_selectedIndex == 0 ? 'Dashboard' : _selectedIndex == 1 ? 'Accounts' : 'Transactions'),
         backgroundColor: AppColors.surface,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-            },
-          ),
-        ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.surface,
-              AppColors.surfaceLight,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: AppSpacing.paddingHorizontalLg,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: AppSpacing.xl),
-                
-                // Welcome Section
-                Text(
-                  'Welcome back!',
-                  style: AppTextStyles.headlineLarge,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Track your expenses with ease',
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
-                
-                const SizedBox(height: AppSpacing.xxl),
-                
-                // Firebase Status Card
-                Card(
-                  child: Padding(
-                    padding: AppSpacing.paddingLg,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: AppSpacing.paddingSm,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withAlpha(25),
-                                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                              ),
-                              child: const Icon(
-                                Icons.cloud_done,
-                                color: AppColors.primary,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Firebase Connected',
-                                    style: AppTextStyles.titleMedium,
-                                  ),
-                                  Text(
-                                    'Your data is securely synced',
-                                    style: AppTextStyles.bodySmall,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+      drawer: Drawer(
+        backgroundColor: AppColors.surface,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Expense Tracker',
+                    style: TextStyle(
+                      color: AppColors.onPrimary,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                
-                const SizedBox(height: AppSpacing.xl),
-                
-                // Quick Actions
-                Text(
-                  'Quick Actions',
-                  style: AppTextStyles.titleLarge,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                
-                Row(
-                  children: [
-                    Expanded(
-                      child: CustomButton(
-                        text: 'Add Expense',
-                        icon: Icons.add,
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Add expense feature coming soon!'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: CustomButton(
-                        text: 'View Reports',
-                        icon: Icons.analytics,
-                        isOutlined: true,
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Reports feature coming soon!'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const Spacer(),
-                
-                // Bottom Info
-                Center(
-                  child: Text(
-                    'Built with Flutter & Firebase',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.onSurfaceVariant,
+                  SizedBox(height: 8),
+                  Text(
+                    'Manage your finances',
+                    style: TextStyle(
+                      color: AppColors.onPrimary,
+                      fontSize: 16,
                     ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
+                ],
+              ),
             ),
-          ),
+            ListTile(
+              leading: const Icon(Icons.dashboard_outlined),
+              title: const Text('Dashboard'),
+              selected: _selectedIndex == 0,
+              onTap: () {
+                setState(() => _selectedIndex = 0);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet_outlined),
+              title: const Text('Accounts'),
+              selected: _selectedIndex == 1,
+              onTap: () {
+                setState(() => _selectedIndex = 1);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.receipt_long_outlined),
+              title: const Text('Transactions'),
+              selected: _selectedIndex == 2,
+              onTap: () {
+                setState(() => _selectedIndex = 2);
+                Navigator.pop(context);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Sign Out'),
+              onTap: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.pop(context);
+              },
+            ),
+          ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Quick add expense!'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
+      body: _screens[_selectedIndex],
     );
   }
 }
