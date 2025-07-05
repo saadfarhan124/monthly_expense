@@ -51,6 +51,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   
+                  // Stats Cards
+                  _buildStatsSection(user.uid),
+                  const SizedBox(height: AppSpacing.xl),
+                  
                   // Accounts Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -72,7 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   
-                  // Accounts Grid
+                  // Accounts List
                   StreamBuilder<List<Account>>(
                     stream: _accountService.getAccounts(user.uid),
                     builder: (context, snapshot) {
@@ -122,20 +126,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         );
                       }
                       
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: AppSpacing.md,
-                          mainAxisSpacing: AppSpacing.md,
-                          childAspectRatio: 1.0, // Further reduced aspect ratio to give more height
-                        ),
-                        itemCount: accounts.length,
-                        itemBuilder: (context, index) {
-                          final account = accounts[index];
-                          return _buildAccountCard(account);
-                        },
+                      return Column(
+                        children: accounts.map((account) => _buildAccountCard(account)).toList(),
                       );
                     },
                   ),
@@ -227,57 +219,234 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildAccountCard(Account account) {
-    return Card(
-      color: AppColors.surfaceVariant,
-      child: Padding(
-        padding: const EdgeInsets.all(12), // Reduced padding
-        child: Column(
+  Widget _buildStatsSection(String userId) {
+    return StreamBuilder<List<Account>>(
+      stream: _accountService.getAccounts(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        final accounts = snapshot.data ?? [];
+        final currencyTotals = <String, double>{};
+        
+        for (final account in accounts) {
+          currencyTotals[account.currency] = (currencyTotals[account.currency] ?? 0) + account.balance;
+        }
+        
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Text(
-                  account.icon,
-                  style: const TextStyle(fontSize: 24),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    account.type.name.toUpperCase(),
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
             Text(
-              account.name,
+              'Total Balance',
               style: AppTextStyles.titleMedium.copyWith(
                 fontWeight: FontWeight.w600,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: AppSpacing.md,
+              runSpacing: AppSpacing.md,
+              children: currencyTotals.entries.map((entry) => 
+                _buildCurrencyCard(entry.key, entry.value)
+              ).toList(),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _buildSpendingStats(userId),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCurrencyCard(String currency, double total) {
+    return Card(
+      color: AppColors.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
-              '${account.currency} ${account.balance.toStringAsFixed(2)}',
-              style: AppTextStyles.headlineSmall.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+              currency,
+                             style: AppTextStyles.labelMedium.copyWith(
+                 color: AppColors.onPrimary,
+                 fontWeight: FontWeight.w600,
+               ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${total.toStringAsFixed(2)}',
+                             style: AppTextStyles.headlineSmall.copyWith(
+                 color: AppColors.onPrimary,
+                 fontWeight: FontWeight.bold,
+               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSpendingStats(String userId) {
+    return StreamBuilder<List<TransactionModel>>(
+      stream: _transactionService.getTransactions(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+        
+        final transactions = snapshot.data ?? [];
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final weekStart = today.subtract(Duration(days: today.weekday - 1));
+        final monthStart = DateTime(now.year, now.month, 1);
+        
+        double todaySpending = 0;
+        double weekSpending = 0;
+        double monthSpending = 0;
+        
+        for (final transaction in transactions) {
+          if (transaction.type == TransactionType.expense) {
+            final transactionDate = DateTime(transaction.date.year, transaction.date.month, transaction.date.day);
+            
+            if (transactionDate == today) {
+              todaySpending += transaction.amount;
+            }
+            if (transactionDate.isAfter(weekStart.subtract(const Duration(days: 1)))) {
+              weekSpending += transaction.amount;
+            }
+            if (transactionDate.isAfter(monthStart.subtract(const Duration(days: 1)))) {
+              monthSpending += transaction.amount;
+            }
+          }
+        }
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Spending Analytics',
+              style: AppTextStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.w600,
               ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSpendingCard('Today', todaySpending, Icons.today),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _buildSpendingCard('This Week', weekSpending, Icons.calendar_view_week),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _buildSpendingCard('This Month', monthSpending, Icons.calendar_month),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSpendingCard(String title, double amount, IconData icon) {
+    return Card(
+      color: AppColors.surfaceVariant,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.onSurfaceVariant, size: 20),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '\$${amount.toStringAsFixed(2)}',
+              style: AppTextStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.error,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountCard(Account account) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      color: AppColors.surfaceVariant,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                account.icon,
+                style: const TextStyle(fontSize: 24),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    account.name,
+                    style: AppTextStyles.titleMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${account.currency} • ${account.type.name.toUpperCase()}',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${account.currency} ${account.balance.toStringAsFixed(2)}',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    account.type.name.toUpperCase(),
+                                         style: AppTextStyles.labelSmall.copyWith(
+                       color: AppColors.onPrimary,
+                       fontWeight: FontWeight.w600,
+                     ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
