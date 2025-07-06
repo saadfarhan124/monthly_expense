@@ -10,6 +10,8 @@ import 'features/transactions/presentation/transactions_screen.dart';
 import 'features/transactions/presentation/transfer_screen.dart';
 import 'features/categories/presentation/categories_screen.dart';
 import 'features/budgets/presentation/budgets_screen.dart';
+import 'features/categories/domain/category_service.dart';
+import 'features/categories/domain/category_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,11 +65,27 @@ class MainNavScreen extends StatefulWidget {
 
 class _MainNavScreenState extends State<MainNavScreen> {
   int _selectedIndex = 0;
+  bool _isInitialized = false;
   
   void _navigateToScreen(int screenIndex) {
     setState(() {
       _selectedIndex = screenIndex;
     });
+  }
+  
+  @override
+  void initState() {
+    super.initState();
+    _initializeForNewUser();
+  }
+  
+  Future<void> _initializeForNewUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && !_isInitialized) {
+      final categoryService = CategoryService(CategoryRepository());
+      await categoryService.initializeDefaultCategories(user.uid);
+      _isInitialized = true;
+    }
   }
   
   List<Widget> get _screens => [

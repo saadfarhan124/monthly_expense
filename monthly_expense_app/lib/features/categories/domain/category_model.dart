@@ -176,6 +176,26 @@ class Category {
         createdAt: now,
         updatedAt: now,
       ),
+      Category(
+        id: 'transfer',
+        name: 'Transfer',
+        icon: '💸',
+        color: '#059669',
+        userId: userId,
+        isDefault: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      Category(
+        id: 'transfer_fees',
+        name: 'Transfer Fees',
+        icon: '💳',
+        color: '#DC2626',
+        userId: userId,
+        isDefault: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
     ];
   }
 } 

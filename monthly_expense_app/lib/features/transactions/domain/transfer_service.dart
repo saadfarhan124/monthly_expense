@@ -1,12 +1,29 @@
 import 'transaction_model.dart';
 import 'transaction_repository.dart';
 import '../../accounts/domain/account_repository.dart';
+import '../../categories/domain/category_repository.dart';
 
 class TransferService {
   final TransactionRepository _transactionRepository;
   final AccountRepository _accountRepository;
+  final CategoryRepository _categoryRepository;
 
-  TransferService(this._transactionRepository, this._accountRepository);
+  TransferService(this._transactionRepository, this._accountRepository)
+      : _categoryRepository = CategoryRepository();
+
+  /// Find category ID by name
+  Future<String?> _findCategoryIdByName(String userId, String categoryName) async {
+    try {
+      final categories = await _categoryRepository.getCategories(userId).first;
+      final category = categories.firstWhere(
+        (cat) => cat.name.toLowerCase() == categoryName.toLowerCase(),
+        orElse: () => throw Exception('Category not found'),
+      );
+      return category.id;
+    } catch (e) {
+      return null;
+    }
+  }
 
   /// Create a transfer between accounts
   /// Returns true if successful, throws exception if failed
@@ -58,11 +75,15 @@ class TransferService {
         throw Exception('Insufficient balance in source account');
       }
       
+      // Find category IDs
+      final transferCategoryId = await _findCategoryIdByName(userId, 'Transfer');
+      final transferFeesCategoryId = await _findCategoryIdByName(userId, 'Transfer Fees');
+      
       // Create the transfer transaction
       final transferTransaction = TransactionModel(
         id: '',
         accountId: fromAccountId,
-        categoryId: '', // Transfers don't need categories
+        categoryId: transferCategoryId ?? '', // Use actual Transfer category ID
         amount: amount,
         description: description,
         type: TransactionType.transfer,
@@ -84,7 +105,7 @@ class TransferService {
         final feeTransaction = TransactionModel(
           id: '',
           accountId: fromAccountId,
-          categoryId: '', // You might want to create a "Transfer Fees" category
+          categoryId: transferFeesCategoryId ?? '', // Use actual Transfer Fees category ID
           amount: transferFee,
           description: 'Transfer fee for: $description',
           type: TransactionType.expense,
