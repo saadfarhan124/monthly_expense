@@ -21,7 +21,7 @@ class TransactionsScreen extends StatefulWidget {
 }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
-  final TransactionService _transactionService = TransactionService(TransactionRepository(), AccountRepository());
+  final TransactionService _transactionService = TransactionService(TransactionRepository());
   final AccountService _accountService = AccountService(AccountRepository());
   final CategoryService _categoryService = CategoryService(CategoryRepository());
   
@@ -501,8 +501,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: category != null 
-            ? Color(int.parse(category.color.replaceAll('#', '0xFF'))).withOpacity(0.1)
-            : amountColor.withOpacity(0.1),
+            ? Color(int.parse(category.color.replaceAll('#', '0xFF'))).withValues(alpha: 0.1)
+            : amountColor.withValues(alpha: 0.1),
         child: Text(
           category?.icon ?? (isExpense ? '📄' : '💰'),
           style: const TextStyle(fontSize: 16),

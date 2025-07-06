@@ -6,7 +6,6 @@ import '../../accounts/domain/account_service.dart';
 import '../../transactions/domain/transaction_model.dart';
 import '../../transactions/domain/transaction_repository.dart';
 import '../../transactions/domain/transaction_service.dart';
-import '../../categories/domain/category_model.dart';
 import '../../categories/domain/category_repository.dart';
 import '../../categories/domain/category_service.dart';
 import '../../../core/theme/app_colors.dart';
@@ -27,16 +26,14 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final AccountService _accountService = AccountService(AccountRepository());
-  final TransactionService _transactionService = TransactionService(TransactionRepository(), AccountRepository());
+  final TransactionService _transactionService = TransactionService(TransactionRepository());
   final CategoryService _categoryService = CategoryService(CategoryRepository());
   
   String _selectedCurrency = 'USD'; // Default currency for filtering
   
   // Cache for accounts and categories
   List<Account> _cachedAccounts = [];
-  List<Category> _cachedCategories = [];
   bool _isAccountsLoaded = false;
-  bool _isCategoriesLoaded = false;
 
   @override
   void initState() {
@@ -61,8 +58,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _categoryService.getCategories(user.uid).listen((categories) {
       if (mounted) {
         setState(() {
-          _cachedCategories = categories;
-          _isCategoriesLoaded = true;
+          // _cachedCategories = categories; // This line is removed
+          // _isCategoriesLoaded = true; // This line is removed
         });
       }
     });
@@ -239,7 +236,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: amountColor.withOpacity(0.1),
+        backgroundColor: amountColor.withValues(alpha: 0.1),
         child: Icon(
           isExpense ? Icons.remove : Icons.add,
           color: amountColor,
@@ -376,14 +373,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: double.infinity,
       height: 120,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryContainer,
-            AppColors.primaryContainer.withOpacity(0.8),
-          ],
-        ),
+                  gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primaryContainer,
+              AppColors.primaryContainer.withValues(alpha: 0.8),
+            ],
+          ),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Center(
@@ -421,7 +418,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             end: Alignment.bottomRight,
             colors: [
               AppColors.primaryContainer,
-              AppColors.primaryContainer.withOpacity(0.8),
+              AppColors.primaryContainer.withValues(alpha: 0.8),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
@@ -435,7 +432,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Text(
                 'Total Balance',
                 style: AppTextStyles.labelMedium.copyWith(
-                  color: AppColors.onPrimary.withOpacity(0.8),
+                  color: AppColors.onPrimary.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w500,
                 ),
               ),

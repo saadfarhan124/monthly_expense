@@ -2,13 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'transaction_model.dart';
 import 'transaction_repository.dart';
 import '../../accounts/domain/account_model.dart';
-import '../../accounts/domain/account_repository.dart';
 
 class TransactionService {
   final TransactionRepository _repo;
-  final AccountRepository _accountRepo;
 
-  TransactionService(this._repo, this._accountRepo);
+  TransactionService(this._repo);
 
   Stream<List<TransactionModel>> getTransactions(String userId) => _repo.getTransactions(userId);
   Future<void> updateTransaction(TransactionModel transaction) => _repo.updateTransaction(transaction);
