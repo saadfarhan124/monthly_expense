@@ -3,6 +3,7 @@ import 'transaction_model.dart';
 import 'transaction_repository.dart';
 import '../../accounts/domain/account_model.dart';
 import '../../categories/domain/category_repository.dart';
+import '../../people/domain/person_model.dart';
 
 class TransactionService {
   final TransactionRepository _repo;
@@ -76,6 +77,8 @@ class TransactionService {
       // If this is a transfer, handle it specially
       if (transaction.type == TransactionType.transfer) {
         await _deleteTransfer(transaction);
+      } else if (transaction.type == TransactionType.lend || transaction.type == TransactionType.borrow) {
+        await _deletePersonTransaction(transaction);
       } else {
         // Delete the transaction
         await _repo.deleteTransaction(transactionId);
@@ -224,6 +227,70 @@ class TransactionService {
       }
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<void> _deletePersonTransaction(TransactionModel transaction) async {
+    try {
+      // Get account and person details
+      final account = await _getAccount(transaction.accountId);
+      final person = await _getPerson(transaction.personId!);
+      
+      if (account == null) {
+        throw Exception('Account not found');
+      }
+      
+      if (person == null) {
+        throw Exception('Person not found');
+      }
+
+      // Delete the transaction
+      await _repo.deleteTransaction(transaction.id);
+
+      // Reverse account balance
+      if (transaction.type == TransactionType.lend) {
+        // Lend: account balance was decreased, so add it back
+        await FirebaseFirestore.instance
+            .collection('accounts')
+            .doc(transaction.accountId)
+            .update({'balance': account.balance + transaction.amount});
+        
+        // Person balance was increased (they owe you more), so decrease it
+        await FirebaseFirestore.instance
+            .collection('people')
+            .doc(transaction.personId)
+            .update({'balance': person.balance - transaction.amount});
+      } else if (transaction.type == TransactionType.borrow) {
+        // Borrow: account balance was increased, so subtract it back
+        await FirebaseFirestore.instance
+            .collection('accounts')
+            .doc(transaction.accountId)
+            .update({'balance': account.balance - transaction.amount});
+        
+        // Person balance was decreased (you owe them more), so increase it
+        await FirebaseFirestore.instance
+            .collection('people')
+            .doc(transaction.personId)
+            .update({'balance': person.balance + transaction.amount});
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Person?> _getPerson(String personId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('people')
+          .doc(personId)
+          .get();
+      
+      if (doc.exists) {
+        return Person.fromFirestore(doc);
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 
