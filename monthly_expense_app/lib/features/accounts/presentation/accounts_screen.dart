@@ -61,13 +61,11 @@ class _AccountsScreenState extends State<AccountsScreen> {
 
   Future<void> _addAccount() async {
     if (!_formKey.currentState!.validate()) {
-      print('Form validation failed');
       return;
     }
     
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      print('No user found');
       return;
     }
     
@@ -83,7 +81,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
         updatedAt: DateTime.now(),
       );
       
-      print('Adding account: ${account.name} with balance: ${account.balance}');
       await _accountService.addAccount(account);
       
       if (mounted) {
@@ -95,7 +92,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
         setState(() => _showAddForm = false);
       }
     } catch (e) {
-      print('Error adding account: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -193,7 +189,6 @@ class _AccountsScreenState extends State<AccountsScreen> {
                               const SizedBox(height: AppSpacing.lg),
                               ElevatedButton(
                                 onPressed: () {
-                                  print('Add account button pressed');
                                   _addAccount();
                                 },
                                 child: const Text('Add Account'),
@@ -228,7 +223,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
         return ListTile(
           leading: Text(acc.icon, style: const TextStyle(fontSize: 24)),
           title: Text(acc.name, style: AppTextStyles.titleMedium),
-          subtitle: Text('${acc.type.name.toUpperCase()}'),
+          subtitle: Text(acc.type.name.toUpperCase()),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

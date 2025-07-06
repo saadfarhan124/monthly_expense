@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'budget_model.dart';
 import 'budget_repository.dart';
 import '../../transactions/domain/transaction_model.dart';
@@ -72,8 +72,6 @@ class BudgetService {
       // Get category details from cache
       final category = _getCachedCategory(categoryId);
       if (category == null) {
-        print('Debug: Category not found for ID: $categoryId');
-        print('Debug: Available categories: ${_cachedCategories.map((c) => '${c.id}: ${c.name}').join(', ')}');
         throw Exception('Category not found. Please try again.');
       }
 
@@ -108,7 +106,6 @@ class BudgetService {
       await _budgetRepo.addBudget(budget);
       return true;
     } catch (e) {
-      print('Error adding budget: $e');
       rethrow;
     }
   }
@@ -119,7 +116,6 @@ class BudgetService {
       await _budgetRepo.updateBudget(budget);
       return true;
     } catch (e) {
-      print('Error updating budget: $e');
       rethrow;
     }
   }
@@ -130,7 +126,6 @@ class BudgetService {
       await _budgetRepo.deleteBudget(budgetId);
       return true;
     } catch (e) {
-      print('Error deleting budget: $e');
       rethrow;
     }
   }
@@ -148,38 +143,28 @@ class BudgetService {
       final spending = _calculateSpendingForBudgetFromCache(budget);
       return BudgetWithSpending(budget: budget, spentAmount: spending);
     } catch (e) {
-      print('Error getting budget with spending: $e');
       rethrow;
     }
   }
 
   // Get all budgets with spending data (optimized with caching)
   Stream<List<BudgetWithSpending>> getBudgetsWithSpending(String userId) {
-    print('DEBUG: getBudgetsWithSpending called for user: $userId');
     return _budgetRepo.getActiveBudgets(userId).asyncMap((budgets) async {
-      print('DEBUG: Got ${budgets.length} budgets from repository');
       
       // Ensure cache is initialized
       if (!_isTransactionsLoaded || !_isCategoriesLoaded) {
-        print('DEBUG: Cache not ready, initializing...');
         await initializeCache(userId);
       }
-      
-      print('DEBUG: Cache status - Transactions: $_isTransactionsLoaded, Categories: $_isCategoriesLoaded');
-      print('DEBUG: Cached transactions: ${_cachedTransactions.length}');
       
       final budgetsWithSpending = <BudgetWithSpending>[];
       
       for (final budget in budgets) {
         final spending = _calculateSpendingForBudgetFromCache(budget);
-        print('DEBUG: Budget ${budget.categoryName} - spent: $spending');
         budgetsWithSpending.add(BudgetWithSpending(budget: budget, spentAmount: spending));
       }
       
-      print('DEBUG: Returning ${budgetsWithSpending.length} budgets with spending data');
       return budgetsWithSpending;
     }).handleError((error) {
-      print('DEBUG: Error in getBudgetsWithSpending: $error');
       // Return empty list on error instead of throwing
       return <BudgetWithSpending>[];
     });
@@ -216,7 +201,6 @@ class BudgetService {
         nearLimitCount: nearLimitCount,
       );
     } catch (e) {
-      print('Error getting budget statistics: $e');
       return BudgetStatistics(
         totalBudget: 0.0,
         totalSpent: 0.0,

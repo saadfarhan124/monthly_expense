@@ -44,6 +44,10 @@ class TransactionModel {
   // Create from Firestore document
   factory TransactionModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    
+    final exchangeRate = data['exchangeRate']?.toDouble();
+    final transferFee = data['transferFee']?.toDouble();
+    
     return TransactionModel(
       id: doc.id,
       accountId: data['accountId'] ?? '',
@@ -59,8 +63,8 @@ class TransactionModel {
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       toAccountId: data['toAccountId'],
-      exchangeRate: data['exchangeRate']?.toDouble(),
-      transferFee: data['transferFee']?.toDouble(),
+      exchangeRate: exchangeRate,
+      transferFee: transferFee,
       transferFeeCurrency: data['transferFeeCurrency'],
     );
   }
@@ -82,8 +86,12 @@ class TransactionModel {
     // Add transfer-specific fields if this is a transfer
     if (type == TransactionType.transfer) {
       if (toAccountId != null) data['toAccountId'] = toAccountId as String;
-      if (exchangeRate != null) data['exchangeRate'] = exchangeRate as double;
-      if (transferFee != null) data['transferFee'] = transferFee as double;
+      if (exchangeRate != null) {
+        data['exchangeRate'] = exchangeRate as double;
+      }
+      if (transferFee != null) {
+        data['transferFee'] = transferFee as double;
+      }
       if (transferFeeCurrency != null) data['transferFeeCurrency'] = transferFeeCurrency as String;
     }
     

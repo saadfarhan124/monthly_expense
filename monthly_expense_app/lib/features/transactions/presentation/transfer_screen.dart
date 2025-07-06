@@ -258,7 +258,7 @@ class _TransferScreenState extends State<TransferScreen> {
                   labelText: 'Amount',
                   prefixIcon: Icon(Icons.attach_money),
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter an amount';
@@ -301,7 +301,7 @@ class _TransferScreenState extends State<TransferScreen> {
                     prefixIcon: Icon(Icons.currency_exchange),
                     helperText: 'How much of the destination currency equals 1 unit of source currency',
                   ),
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Exchange rate is required for cross-currency transfers';
@@ -324,11 +324,11 @@ class _TransferScreenState extends State<TransferScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _transferFeeController,
-                                             decoration: const InputDecoration(
-                         labelText: 'Transfer Fee (Optional)',
-                         prefixIcon: Icon(Icons.payment),
-                       ),
-                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Transfer Fee (Optional)',
+                        prefixIcon: Icon(Icons.payment),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       enabled: _showTransferFee,
                       validator: (value) {
                         if (value != null && value.isNotEmpty) {
@@ -442,7 +442,6 @@ class _TransferScreenState extends State<TransferScreen> {
     final destinationAmount = isCrossCurrency && exchangeRate != null
         ? amount * exchangeRate
         : amount;
-    final totalDeducted = amount + transferFee;
 
     return Card(
       color: AppColors.surfaceVariant,
@@ -458,7 +457,7 @@ class _TransferScreenState extends State<TransferScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            _buildSummaryRow('From', '${fromAccount.currency} $totalDeducted'),
+            _buildSummaryRow('From', '${fromAccount.currency} $amount'),
             _buildSummaryRow('To', '${toAccount.currency} ${destinationAmount.toStringAsFixed(2)}'),
             if (transferFee > 0) _buildSummaryRow('Fee', '${fromAccount.currency} $transferFee'),
             if (isCrossCurrency && exchangeRate != null)

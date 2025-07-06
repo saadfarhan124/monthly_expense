@@ -31,7 +31,6 @@ class AccountRepository {
       }
       return null;
     } catch (e) {
-      print('Error getting account: $e');
       return null;
     }
   }
@@ -44,7 +43,6 @@ class AccountRepository {
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
     } catch (e) {
-      print('Error updating account balance: $e');
       rethrow;
     }
   }

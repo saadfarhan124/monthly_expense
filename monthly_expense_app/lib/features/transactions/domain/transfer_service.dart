@@ -1,5 +1,4 @@
 import 'transaction_model.dart';
-import '../../accounts/domain/account_model.dart';
 import 'transaction_repository.dart';
 import '../../accounts/domain/account_repository.dart';
 
@@ -80,6 +79,24 @@ class TransferService {
       // Add the transfer transaction
       await _transactionRepository.addTransaction(transferTransaction);
       
+      // If there's a transfer fee, create an expense transaction for it
+      if (transferFee != null && transferFee > 0) {
+        final feeTransaction = TransactionModel(
+          id: '',
+          accountId: fromAccountId,
+          categoryId: '', // You might want to create a "Transfer Fees" category
+          amount: transferFee,
+          description: 'Transfer fee for: $description',
+          type: TransactionType.expense,
+          userId: userId,
+          date: date ?? DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        
+        await _transactionRepository.addTransaction(feeTransaction);
+      }
+      
       // Update account balances
       await _accountRepository.updateAccountBalance(
         fromAccountId, 
@@ -93,7 +110,6 @@ class TransferService {
       
       return true;
     } catch (e) {
-      print('Error creating transfer: $e');
       rethrow;
     }
   }

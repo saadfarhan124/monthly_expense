@@ -306,18 +306,15 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
   }
 
   Widget _buildBudgetsList(String userId) {
-    print('DEBUG: _buildBudgetsList called, stream: $_budgetStream');
     return StreamBuilder<List<BudgetWithSpending>>(
       stream: _budgetStream,
       builder: (context, snapshot) {
-        print('DEBUG: StreamBuilder state: ${snapshot.connectionState}, data: ${snapshot.data?.length ?? 0}');
         
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
         
         final budgets = snapshot.data ?? [];
-        print('DEBUG: Final budgets count: ${budgets.length}');
         
         if (budgets.isEmpty) {
           return Center(
