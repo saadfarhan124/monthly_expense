@@ -2,14 +2,30 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'transaction_model.dart';
 import 'transaction_repository.dart';
 import '../../accounts/domain/account_model.dart';
+import '../../categories/domain/category_repository.dart';
 
 class TransactionService {
   final TransactionRepository _repo;
+  final CategoryRepository _categoryRepo;
 
-  TransactionService(this._repo);
+  TransactionService(this._repo) : _categoryRepo = CategoryRepository();
 
   Stream<List<TransactionModel>> getTransactions(String userId) => _repo.getTransactions(userId);
   Future<void> updateTransaction(TransactionModel transaction) => _repo.updateTransaction(transaction);
+  
+  /// Find category ID by name
+  Future<String?> _findCategoryIdByName(String userId, String categoryName) async {
+    try {
+      final categories = await _categoryRepo.getCategories(userId).first;
+      final category = categories.firstWhere(
+        (cat) => cat.name.toLowerCase() == categoryName.toLowerCase(),
+        orElse: () => throw Exception('Category not found'),
+      );
+      return category.id;
+    } catch (e) {
+      return null;
+    }
+  }
   Future<void> deleteTransaction(String transactionId) async {
     try {
       // Get the transaction before deleting it
@@ -177,13 +193,33 @@ class TransactionService {
 
   Future<void> _deleteTransferFeeTransaction(TransactionModel transfer) async {
     try {
-      // Find the fee transaction by looking for expense transactions with matching description
+      // Find the fee transaction by looking for expense transactions with matching description and category
       final feeDescription = 'Transfer fee for: ${transfer.description}';
+      
+      // Find the Transfer Fees category ID
+      final transferFeesCategoryId = await _findCategoryIdByName(transfer.userId, 'Transfer Fees');
+      
+      if (transferFeesCategoryId == null) {
+        // If category not found, just look by description and amount
+        final query = await FirebaseFirestore.instance
+            .collection('transactions')
+            .where('accountId', isEqualTo: transfer.accountId)
+            .where('type', isEqualTo: 'expense')
+            .where('description', isEqualTo: feeDescription)
+            .where('amount', isEqualTo: transfer.transferFee)
+            .get();
+            
+        if (query.docs.isNotEmpty) {
+          await _repo.deleteTransaction(query.docs.first.id);
+        }
+        return;
+      }
       
       final query = await FirebaseFirestore.instance
           .collection('transactions')
           .where('accountId', isEqualTo: transfer.accountId)
           .where('type', isEqualTo: 'expense')
+          .where('categoryId', isEqualTo: transferFeesCategoryId)
           .where('description', isEqualTo: feeDescription)
           .where('amount', isEqualTo: transfer.transferFee)
           .get();

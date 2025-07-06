@@ -6,7 +6,8 @@ class CategoryRepository {
 
   Stream<List<Category>> getCategories(String userId) {
     return _collection.where('userId', isEqualTo: userId).snapshots().map(
-      (snapshot) => snapshot.docs.map((doc) => Category.fromFirestore(doc)).toList(),
+      (snapshot) => snapshot.docs.map((doc) => Category.fromFirestore(doc)).toList()
+        ..sort((a, b) => a.name.compareTo(b.name)),
     );
   }
 

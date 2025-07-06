@@ -41,7 +41,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeCategories();
     _loadCachedData();
   }
 
@@ -51,12 +50,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     super.dispose();
   }
 
-  Future<void> _initializeCategories() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await _categoryService.initializeDefaultCategories(user.uid);
-    }
-  }
+
 
   Future<void> _loadCachedData() async {
     final user = FirebaseAuth.instance.currentUser;
