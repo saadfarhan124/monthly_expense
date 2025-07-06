@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'core/theme/app_theme.dart';
-import 'core/theme/app_colors.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'features/auth/presentation/auth_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/accounts/presentation/accounts_screen.dart';
 import 'features/transactions/presentation/transactions_screen.dart';
-import 'features/transactions/presentation/transfer_screen.dart';
 import 'features/categories/presentation/categories_screen.dart';
 import 'features/budgets/presentation/budgets_screen.dart';
 import 'features/people/presentation/people_screen.dart';
+import 'features/transactions/presentation/transfer_screen.dart';
+import 'features/onboarding/presentation/onboarding_screen.dart';
 import 'features/categories/domain/category_service.dart';
 import 'features/categories/domain/category_repository.dart';
+import 'core/theme/app_theme.dart';
+import 'core/theme/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,6 +69,7 @@ class MainNavScreen extends StatefulWidget {
 class _MainNavScreenState extends State<MainNavScreen> {
   int _selectedIndex = 0;
   bool _isInitialized = false;
+  bool _showOnboarding = false;
   
   void _navigateToScreen(int screenIndex) {
     setState(() {
@@ -85,8 +88,39 @@ class _MainNavScreenState extends State<MainNavScreen> {
     if (user != null && !_isInitialized) {
       final categoryService = CategoryService(CategoryRepository());
       await categoryService.initializeDefaultCategories(user.uid);
+      
+      // Check if user has seen onboarding
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      
+      if (!userDoc.exists || !(userDoc.data()?['hasSeenOnboarding'] ?? false)) {
+        setState(() {
+          _showOnboarding = true;
+        });
+      }
+      
       _isInitialized = true;
     }
+  }
+  
+  void _completeOnboarding() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // Mark onboarding as completed
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({
+        'hasSeenOnboarding': true,
+        'onboardingCompletedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+    
+    setState(() {
+      _showOnboarding = false;
+    });
   }
   
   List<Widget> get _screens => [
@@ -100,6 +134,10 @@ class _MainNavScreenState extends State<MainNavScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_showOnboarding) {
+      return OnboardingScreen(onComplete: _completeOnboarding);
+    }
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(_selectedIndex == 0 ? 'Dashboard' : _selectedIndex == 1 ? 'Accounts' : _selectedIndex == 2 ? 'Transactions' : _selectedIndex == 3 ? 'Categories' : _selectedIndex == 4 ? 'Budgets' : 'People'),
