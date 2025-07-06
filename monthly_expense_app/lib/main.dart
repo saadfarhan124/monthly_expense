@@ -8,6 +8,7 @@ import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/accounts/presentation/accounts_screen.dart';
 import 'features/transactions/presentation/transactions_screen.dart';
 import 'features/categories/presentation/categories_screen.dart';
+import 'features/budgets/presentation/budgets_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,13 +74,14 @@ class _MainNavScreenState extends State<MainNavScreen> {
     const AccountsScreen(),
     const TransactionsScreen(),
     const CategoriesScreen(),
+    const BudgetsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedIndex == 0 ? 'Dashboard' : _selectedIndex == 1 ? 'Accounts' : _selectedIndex == 2 ? 'Transactions' : 'Categories'),
+        title: Text(_selectedIndex == 0 ? 'Dashboard' : _selectedIndex == 1 ? 'Accounts' : _selectedIndex == 2 ? 'Transactions' : _selectedIndex == 3 ? 'Categories' : 'Budgets'),
         backgroundColor: AppColors.surface,
       ),
       drawer: Drawer(
@@ -146,6 +148,15 @@ class _MainNavScreenState extends State<MainNavScreen> {
               selected: _selectedIndex == 3,
               onTap: () {
                 setState(() => _selectedIndex = 3);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.attach_money_outlined),
+              title: const Text('Budgets'),
+              selected: _selectedIndex == 4,
+              onTap: () {
+                setState(() => _selectedIndex = 4);
                 Navigator.pop(context);
               },
             ),
