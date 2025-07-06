@@ -4,6 +4,8 @@ enum TransactionType {
   expense,
   income,
   transfer,
+  lend,
+  borrow,
 }
 
 class TransactionModel {
@@ -23,6 +25,9 @@ class TransactionModel {
   final double? exchangeRate;
   final double? transferFee;
   final String? transferFeeCurrency;
+  
+  // Person-specific fields
+  final String? personId;
 
   const TransactionModel({
     required this.id,
@@ -39,6 +44,7 @@ class TransactionModel {
     this.exchangeRate,
     this.transferFee,
     this.transferFeeCurrency,
+    this.personId,
   });
 
   // Create from Firestore document
@@ -66,6 +72,7 @@ class TransactionModel {
       exchangeRate: exchangeRate,
       transferFee: transferFee,
       transferFeeCurrency: data['transferFeeCurrency'],
+      personId: data['personId'],
     );
   }
 
@@ -95,6 +102,11 @@ class TransactionModel {
       if (transferFeeCurrency != null) data['transferFeeCurrency'] = transferFeeCurrency as String;
     }
     
+    // Add person-specific fields if this is a lend/borrow transaction
+    if (type == TransactionType.lend || type == TransactionType.borrow) {
+      if (personId != null) data['personId'] = personId as String;
+    }
+    
     return data;
   }
 
@@ -114,6 +126,7 @@ class TransactionModel {
     double? exchangeRate,
     double? transferFee,
     String? transferFeeCurrency,
+    String? personId,
   }) {
     return TransactionModel(
       id: id ?? this.id,
@@ -130,6 +143,7 @@ class TransactionModel {
       exchangeRate: exchangeRate ?? this.exchangeRate,
       transferFee: transferFee ?? this.transferFee,
       transferFeeCurrency: transferFeeCurrency ?? this.transferFeeCurrency,
+      personId: personId ?? this.personId,
     );
   }
   
