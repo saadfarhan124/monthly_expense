@@ -1,0 +1,165 @@
+---
+alwaysApply: true
+---
+
+# Monthly Expense App - Project Rules
+
+## Component Usage Guidelines
+
+### Always Use Existing Components
+- **AnimatedButton**: Use for all primary action buttons (add, save, update, transfer, etc.)
+- **HapticFeedback**: Implement haptic feedback for user interactions
+- **AppColors**: Use the established color scheme from `app_colors.dart`
+- **AppSpacing**: Use consistent spacing from `app_spacing.dart`
+- **AppTextStyles**: Use predefined text styles from `app_text_styles.dart`
+
+### Custom Widgets Priority
+1. **AnimatedButton** over `ElevatedButton` for primary actions
+2. **Custom haptic feedback** over no feedback
+3. **Established color scheme** over hardcoded colors
+4. **Consistent spacing** over arbitrary padding/margins
+5. **Predefined text styles** over custom TextStyle
+
+### Architecture Patterns
+- **Repository Pattern**: Use existing repositories for data access
+- **Service Layer**: Use service classes for business logic
+- **Stream-based State**: Use real-time streams for data updates
+- **Caching Strategy**: Implement caching for performance
+- **Error Handling**: Use consistent error handling patterns
+
+### UI/UX Consistency
+- **Loading States**: Show loading indicators during async operations
+- **Validation**: Implement proper form validation
+- **Error Messages**: Use consistent error messaging
+- **Success Feedback**: Provide user feedback for successful actions
+- **Navigation**: Use consistent navigation patterns
+
+### Code Quality Standards
+- **Null Safety**: Always use proper null safety practices
+- **Widget Composition**: Keep widgets small and focused
+- **State Management**: Use proper state management patterns
+- **Performance**: Optimize for performance with caching
+- **Readability**: Write clear, maintainable code
+
+### Specific Component Rules
+- **Buttons**: Use AnimatedButton with appropriate haptic feedback
+- **Forms**: Use consistent form validation and styling
+- **Lists**: Use ListView.separated with consistent separators
+- **Cards**: Use Card widgets with consistent styling
+- **Icons**: Use consistent icon usage patterns
+
+### Database/Firestore Patterns
+- **Real-time Updates**: Use streams for live data
+- **Error Handling**: Implement proper Firestore error handling
+- **Caching**: Use caching to improve performance
+- **Validation**: Validate data before saving
+
+### Testing Considerations
+- **Unit Tests**: Write tests for business logic
+- **Widget Tests**: Test UI components
+- **Integration Tests**: Test feature workflows
+
+## Before Creating New Code
+1. **Check existing components** - Look for existing solutions
+2. **Follow established patterns** - Use consistent architecture
+3. **Leverage existing utilities** - Use helper functions and utilities
+4. **Maintain consistency** - Follow established conventions
+5. **Consider performance** - Use caching and optimization
+
+## Component Checklist
+When implementing new features, ensure:
+- [ ] Using AnimatedButton for primary actions
+- [ ] Implementing haptic feedback
+- [ ] Using AppColors, AppSpacing, AppTextStyles
+- [ ] Following repository/service pattern
+- [ ] Implementing proper error handling
+- [ ] Adding loading states
+- [ ] Using consistent validation
+- [ ] Following established navigation patterns
+
+## Remember
+- **Don't reinvent the wheel** - Use existing components
+- **Maintain consistency** - Follow established patterns
+- **Consider user experience** - Add haptic feedback and animations
+- **Optimize performance** - Use caching and efficient patterns
+- **Write maintainable code** - Follow clean code principles # Monthly Expense App - Project Rules
+
+## Component Usage Guidelines
+
+### Always Use Existing Components
+- **AnimatedButton**: Use for all primary action buttons (add, save, update, transfer, etc.)
+- **HapticFeedback**: Implement haptic feedback for user interactions
+- **AppColors**: Use the established color scheme from `app_colors.dart`
+- **AppSpacing**: Use consistent spacing from `app_spacing.dart`
+- **AppTextStyles**: Use predefined text styles from `app_text_styles.dart`
+
+### Custom Widgets Priority
+1. **AnimatedButton** over `ElevatedButton` for primary actions
+2. **Custom haptic feedback** over no feedback
+3. **Established color scheme** over hardcoded colors
+4. **Consistent spacing** over arbitrary padding/margins
+5. **Predefined text styles** over custom TextStyle
+
+### Architecture Patterns
+- **Repository Pattern**: Use existing repositories for data access
+- **Service Layer**: Use service classes for business logic
+- **Stream-based State**: Use real-time streams for data updates
+- **Caching Strategy**: Implement caching for performance
+- **Error Handling**: Use consistent error handling patterns
+
+### UI/UX Consistency
+- **Loading States**: Show loading indicators during async operations
+- **Validation**: Implement proper form validation
+- **Error Messages**: Use consistent error messaging
+- **Success Feedback**: Provide user feedback for successful actions
+- **Navigation**: Use consistent navigation patterns
+
+### Code Quality Standards
+- **Null Safety**: Always use proper null safety practices
+- **Widget Composition**: Keep widgets small and focused
+- **State Management**: Use proper state management patterns
+- **Performance**: Optimize for performance with caching
+- **Readability**: Write clear, maintainable code
+
+### Specific Component Rules
+- **Buttons**: Use AnimatedButton with appropriate haptic feedback
+- **Forms**: Use consistent form validation and styling
+- **Lists**: Use ListView.separated with consistent separators
+- **Cards**: Use Card widgets with consistent styling
+- **Icons**: Use consistent icon usage patterns
+
+### Database/Firestore Patterns
+- **Real-time Updates**: Use streams for live data
+- **Error Handling**: Implement proper Firestore error handling
+- **Caching**: Use caching to improve performance
+- **Validation**: Validate data before saving
+
+### Testing Considerations
+- **Unit Tests**: Write tests for business logic
+- **Widget Tests**: Test UI components
+- **Integration Tests**: Test feature workflows
+
+## Before Creating New Code
+1. **Check existing components** - Look for existing solutions
+2. **Follow established patterns** - Use consistent architecture
+3. **Leverage existing utilities** - Use helper functions and utilities
+4. **Maintain consistency** - Follow established conventions
+5. **Consider performance** - Use caching and optimization
+
+## Component Checklist
+When implementing new features, ensure:
+- [ ] Using AnimatedButton for primary actions
+- [ ] Implementing haptic feedback
+- [ ] Using AppColors, AppSpacing, AppTextStyles
+- [ ] Following repository/service pattern
+- [ ] Implementing proper error handling
+- [ ] Adding loading states
+- [ ] Using consistent validation
+- [ ] Following established navigation patterns
+
+## Remember
+- **Don't reinvent the wheel** - Use existing components
+- **Maintain consistency** - Follow established patterns
+- **Consider user experience** - Add haptic feedback and animations
+- **Optimize performance** - Use caching and efficient patterns
+- **Write maintainable code** - Follow clean code principles 

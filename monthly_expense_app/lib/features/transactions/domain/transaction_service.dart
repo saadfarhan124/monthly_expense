@@ -11,7 +11,46 @@ class TransactionService {
   TransactionService(this._repo) : _categoryRepo = CategoryRepository();
 
   Stream<List<TransactionModel>> getTransactions(String userId) => _repo.getTransactions(userId);
-  Future<void> updateTransaction(TransactionModel transaction) => _repo.updateTransaction(transaction);
+  
+  Future<void> updateTransaction(TransactionModel updatedTransaction) async {
+    try {
+      // Get the original transaction to calculate balance changes
+      final originalTransaction = await _getTransaction(updatedTransaction.id);
+      if (originalTransaction == null) {
+        throw Exception('Transaction not found');
+      }
+
+      // Don't allow editing transfer transactions
+      if (originalTransaction.type == TransactionType.transfer) {
+        throw Exception('Transfer transactions cannot be edited');
+      }
+
+      // Check if account has sufficient balance for expenses
+      if (updatedTransaction.type == TransactionType.expense) {
+        final account = await _getAccount(updatedTransaction.accountId);
+        if (account == null) {
+          throw Exception('Account not found');
+        }
+        
+        // Calculate the difference in amount
+        final amountDifference = updatedTransaction.amount - originalTransaction.amount;
+        final newBalance = account.balance - amountDifference;
+        
+        if (newBalance < 0) {
+          throw Exception('Insufficient funds. Available: ${account.currency} ${account.balance.toStringAsFixed(2)}');
+        }
+      }
+
+      // Update the transaction
+      await _repo.updateTransaction(updatedTransaction);
+      
+      // Update account balances
+      await _updateAccountBalanceForEdit(originalTransaction, updatedTransaction);
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
   
   /// Find category ID by name
   Future<String?> _findCategoryIdByName(String userId, String categoryName) async {
@@ -145,6 +184,44 @@ class TransactionService {
           .collection('accounts')
           .doc(transaction.accountId)
           .update({'balance': newBalance});
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> _updateAccountBalanceForEdit(TransactionModel original, TransactionModel updated) async {
+    try {
+      // Handle original account balance (reverse the original transaction)
+      final originalAccount = await _getAccount(original.accountId);
+      if (originalAccount != null) {
+        double originalBalance = originalAccount.balance;
+        if (original.type == TransactionType.income) {
+          originalBalance -= original.amount; // Remove original income
+        } else {
+          originalBalance += original.amount; // Add back original expense
+        }
+        
+        await FirebaseFirestore.instance
+            .collection('accounts')
+            .doc(original.accountId)
+            .update({'balance': originalBalance});
+      }
+
+      // Handle updated account balance (apply the new transaction)
+      final updatedAccount = await _getAccount(updated.accountId);
+      if (updatedAccount != null) {
+        double updatedBalance = updatedAccount.balance;
+        if (updated.type == TransactionType.income) {
+          updatedBalance += updated.amount; // Add new income
+        } else {
+          updatedBalance -= updated.amount; // Subtract new expense
+        }
+        
+        await FirebaseFirestore.instance
+            .collection('accounts')
+            .doc(updated.accountId)
+            .update({'balance': updatedBalance});
+      }
     } catch (e) {
       rethrow;
     }

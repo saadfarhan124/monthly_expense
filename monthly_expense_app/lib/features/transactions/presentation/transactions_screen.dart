@@ -13,6 +13,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import 'transfer_screen.dart';
+import 'edit_transaction_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -150,6 +151,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         const SnackBar(content: Text('Transaction deleted!'), backgroundColor: AppColors.error),
       );
     }
+  }
+
+  void _editTransaction(TransactionModel transaction) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditTransactionScreen(transaction: transaction),
+      ),
+    );
   }
 
   @override
@@ -560,6 +570,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
           ),
           const SizedBox(width: 8),
+          if (transaction.type != TransactionType.transfer) ...[
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 18),
+              onPressed: () => _editTransaction(transaction),
+              tooltip: 'Edit',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+            const SizedBox(width: 4),
+          ],
           IconButton(
             icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
             onPressed: () => _deleteTransaction(transaction.id),
