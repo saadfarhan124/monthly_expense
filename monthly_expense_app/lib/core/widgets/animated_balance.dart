@@ -73,9 +73,20 @@ class _AnimatedBalanceState extends State<AnimatedBalance>
   String _formatBalance(double value) {
     if (value >= 1000000) {
       return '${(value / 1000000).toStringAsFixed(1)}M';
-    } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(1)}K';
+    } else if (value >= 10000) {
+      // For amounts >= 10K, check if it's close to a whole thousand
+      final thousands = value / 1000;
+      final remainder = thousands % 1;
+      
+      // If it's within 0.1 of a whole number, show the full amount
+      if (remainder < 0.1 || remainder > 0.9) {
+        return value.toStringAsFixed(0);
+      } else {
+        // Otherwise use K format
+        return '${thousands.toStringAsFixed(1)}K';
+      }
     } else {
+      // For smaller amounts, show the full number
       return value.toStringAsFixed(0);
     }
   }

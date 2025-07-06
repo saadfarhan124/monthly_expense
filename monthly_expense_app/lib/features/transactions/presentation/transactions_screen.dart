@@ -12,6 +12,7 @@ import '../../categories/domain/category_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import 'transfer_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -166,10 +167,24 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('', style: TextStyle(fontSize: 1)), // Spacer
-                      IconButton(
-                        icon: Icon(_showAddForm ? Icons.close : Icons.add),
-                        onPressed: _toggleAddForm,
-                        tooltip: _showAddForm ? 'Cancel' : 'Add Transaction',
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.swap_horiz_outlined),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const TransferScreen()),
+                              );
+                            },
+                            tooltip: 'Transfer Money',
+                          ),
+                          IconButton(
+                            icon: Icon(_showAddForm ? Icons.close : Icons.add),
+                            onPressed: _toggleAddForm,
+                            tooltip: _showAddForm ? 'Cancel' : 'Add Transaction',
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -202,6 +217,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                     child: DropdownButtonFormField<TransactionType>(
                                       value: _selectedType,
                                       items: TransactionType.values
+                                          .where((e) => e != TransactionType.transfer) // Exclude transfer from regular transactions
                                           .map((e) => DropdownMenuItem(
                                                 value: e,
                                                 child: Row(

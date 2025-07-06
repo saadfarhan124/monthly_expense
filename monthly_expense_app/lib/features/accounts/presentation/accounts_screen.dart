@@ -228,11 +228,36 @@ class _AccountsScreenState extends State<AccountsScreen> {
         return ListTile(
           leading: Text(acc.icon, style: const TextStyle(fontSize: 24)),
           title: Text(acc.name, style: AppTextStyles.titleMedium),
-          subtitle: Text('${acc.currency} • ${acc.type.name.toUpperCase()}'),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.error),
-            onPressed: () => _deleteAccount(acc.id),
-            tooltip: 'Delete',
+          subtitle: Text('${acc.type.name.toUpperCase()}'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${acc.currency} ${acc.balance.toStringAsFixed(2)}',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: acc.balance >= 0 ? AppColors.success : AppColors.error,
+                    ),
+                  ),
+                  Text(
+                    'Available',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                onPressed: () => _deleteAccount(acc.id),
+                tooltip: 'Delete',
+              ),
+            ],
           ),
         );
       },

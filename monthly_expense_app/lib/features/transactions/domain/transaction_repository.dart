@@ -21,4 +21,14 @@ class TransactionRepository {
   Future<void> deleteTransaction(String transactionId) async {
     await _collection.doc(transactionId).delete();
   }
+
+  // Get transactions for a specific account
+  Stream<List<TransactionModel>> getTransactionsByAccount(String accountId) {
+    return _collection
+        .where('accountId', isEqualTo: accountId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => TransactionModel.fromFirestore(doc))
+            .toList());
+  }
 } 
