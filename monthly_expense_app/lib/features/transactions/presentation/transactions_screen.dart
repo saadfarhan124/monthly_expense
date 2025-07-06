@@ -17,7 +17,7 @@ import 'transfer_screen.dart';
 import 'edit_transaction_screen.dart';
 
 enum SortOrder { newest, oldest }
-enum FilterType { all, expenses, income, transfers }
+enum FilterType { all, expenses, income, transfers, lending, borrowing }
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -184,6 +184,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       if (_filterType == FilterType.expenses && t.type != TransactionType.expense) return false;
       if (_filterType == FilterType.income && t.type != TransactionType.income) return false;
       if (_filterType == FilterType.transfers && t.type != TransactionType.transfer) return false;
+      if (_filterType == FilterType.lending && t.type != TransactionType.lend) return false;
+      if (_filterType == FilterType.borrowing && t.type != TransactionType.borrow) return false;
       
       // Category filter
       if (_selectedCategoryFilter != null && t.categoryId != _selectedCategoryFilter) return false;
@@ -417,6 +419,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         return 'INC';
       case FilterType.transfers:
         return 'TRF';
+      case FilterType.lending:
+        return 'LND';
+      case FilterType.borrowing:
+        return 'BRW';
     }
   }
 
@@ -480,7 +486,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     child: DropdownButtonFormField<TransactionType>(
                       value: _selectedType,
                       items: TransactionType.values
-                          .where((e) => e != TransactionType.transfer) // Exclude transfer from regular transactions
+                          .where((e) => e != TransactionType.transfer && e != TransactionType.lend && e != TransactionType.borrow) // Exclude transfer, lend, borrow from regular transactions
                           .map((e) => DropdownMenuItem(
                                 value: e,
                                 child: Row(
@@ -720,8 +726,25 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   Widget _buildTransactionTile(TransactionModel transaction) {
     final isExpense = transaction.type == TransactionType.expense;
-    final amountColor = isExpense ? AppColors.error : AppColors.success;
-    final amountPrefix = isExpense ? '-' : '+';
+    final isLend = transaction.type == TransactionType.lend;
+    final isBorrow = transaction.type == TransactionType.borrow;
+    
+    Color amountColor;
+    String amountPrefix;
+    
+    if (isExpense) {
+      amountColor = AppColors.error;
+      amountPrefix = '-';
+    } else if (isLend) {
+      amountColor = AppColors.warning;
+      amountPrefix = '-';
+    } else if (isBorrow) {
+      amountColor = AppColors.success;
+      amountPrefix = '+';
+    } else {
+      amountColor = AppColors.success;
+      amountPrefix = '+';
+    }
     
     // Use cached data
     final account = _getCachedAccount(transaction.accountId);
@@ -776,7 +799,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            if (transaction.type != TransactionType.transfer) ...[
+            if (transaction.type != TransactionType.transfer && transaction.type != TransactionType.lend && transaction.type != TransactionType.borrow) ...[
               IconButton(
                 icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 18),
                 onPressed: () => _editTransaction(transaction),

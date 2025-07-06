@@ -196,6 +196,26 @@ class Category {
         createdAt: now,
         updatedAt: now,
       ),
+      Category(
+        id: 'lending',
+        name: 'Lending',
+        icon: '🤝',
+        color: '#059669',
+        userId: userId,
+        isDefault: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      Category(
+        id: 'borrowing',
+        name: 'Borrowing',
+        icon: '📋',
+        color: '#DC2626',
+        userId: userId,
+        isDefault: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
     ];
   }
 } 

@@ -33,9 +33,19 @@ class CategoryRepository {
         .get();
     
     if (existingCategories.docs.isEmpty) {
-      // Add default categories
+      // Add all default categories for new users
       for (final category in defaultCategories) {
         await _collection.add(category.toFirestore());
+      }
+    } else {
+      // For existing users, check if new default categories need to be added
+      final existingCategoryIds = existingCategories.docs.map((doc) => doc.id).toSet();
+      
+      for (final category in defaultCategories) {
+        if (!existingCategoryIds.contains(category.id)) {
+          // Add missing default category
+          await _collection.add(category.toFirestore());
+        }
       }
     }
   }

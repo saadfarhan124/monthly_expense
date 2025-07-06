@@ -10,6 +10,7 @@ import 'features/transactions/presentation/transactions_screen.dart';
 import 'features/transactions/presentation/transfer_screen.dart';
 import 'features/categories/presentation/categories_screen.dart';
 import 'features/budgets/presentation/budgets_screen.dart';
+import 'features/people/presentation/people_screen.dart';
 import 'features/categories/domain/category_service.dart';
 import 'features/categories/domain/category_repository.dart';
 
@@ -94,13 +95,14 @@ class _MainNavScreenState extends State<MainNavScreen> {
     const TransactionsScreen(),
     const CategoriesScreen(),
     const BudgetsScreen(),
+    const PeopleScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectedIndex == 0 ? 'Dashboard' : _selectedIndex == 1 ? 'Accounts' : _selectedIndex == 2 ? 'Transactions' : _selectedIndex == 3 ? 'Categories' : 'Budgets'),
+        title: Text(_selectedIndex == 0 ? 'Dashboard' : _selectedIndex == 1 ? 'Accounts' : _selectedIndex == 2 ? 'Transactions' : _selectedIndex == 3 ? 'Categories' : _selectedIndex == 4 ? 'Budgets' : 'People'),
         backgroundColor: AppColors.surface,
       ),
       drawer: Drawer(
@@ -187,6 +189,15 @@ class _MainNavScreenState extends State<MainNavScreen> {
               selected: _selectedIndex == 4,
               onTap: () {
                 setState(() => _selectedIndex = 4);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.people_outline),
+              title: const Text('People'),
+              selected: _selectedIndex == 5,
+              onTap: () {
+                setState(() => _selectedIndex = 5);
                 Navigator.pop(context);
               },
             ),
