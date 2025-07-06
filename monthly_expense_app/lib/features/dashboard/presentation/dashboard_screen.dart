@@ -48,21 +48,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Load accounts and categories once and cache them
     _accountService.getAccounts(user.uid).listen((accounts) {
       if (mounted) {
-        setState(() {
-          _cachedAccounts = accounts;
-          _isAccountsLoaded = true;
-        });
+        // Only update if the accounts actually changed
+        if (_cachedAccounts.length != accounts.length || 
+            !_listEquals(_cachedAccounts, accounts)) {
+          setState(() {
+            _cachedAccounts = accounts;
+            _isAccountsLoaded = true;
+          });
+        }
       }
     });
 
     _categoryService.getCategories(user.uid).listen((categories) {
       if (mounted) {
-        setState(() {
-          // _cachedCategories = categories; // This line is removed
-          // _isCategoriesLoaded = true; // This line is removed
-        });
+        // Only update if categories actually changed
+        // For now, we're not using categories, so we can skip this
+        // setState(() {
+        //   _cachedCategories = categories;
+        //   _isCategoriesLoaded = true;
+        // });
       }
     });
+  }
+
+  bool _listEquals<T>(List<T>? a, List<T>? b) {
+    if (a == null) return b == null;
+    if (b == null || a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   Account? _getCachedAccount(String accountId) {
@@ -334,37 +349,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildBalanceSection(String userId) {
-    return StreamBuilder<List<Account>>(
-      stream: _accountService.getAccounts(userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        
-        final accounts = snapshot.data ?? [];
-        final currencyTotals = <String, double>{};
-        
-        for (final account in accounts) {
-          currencyTotals[account.currency] = (currencyTotals[account.currency] ?? 0) + account.balance;
-        }
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Total Balance',
-              style: AppTextStyles.titleLarge.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            if (currencyTotals.isEmpty)
-              _buildEmptyBalanceCard()
-            else
-              _buildBalanceCards(currencyTotals),
-          ],
-        );
-      },
+    // Use cached accounts instead of StreamBuilder
+    final accounts = _cachedAccounts;
+    final currencyTotals = <String, double>{};
+    
+    for (final account in accounts) {
+      currencyTotals[account.currency] = (currencyTotals[account.currency] ?? 0) + account.balance;
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Total Balance',
+          style: AppTextStyles.titleLarge.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        if (currencyTotals.isEmpty)
+          _buildEmptyBalanceCard()
+        else
+          _buildBalanceCards(currencyTotals),
+      ],
     );
   }
 
@@ -470,7 +477,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.surfaceVariant,
+                  AppColors.surfaceVariant.withValues(alpha: 0.8),
+                ],
+              ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: AppColors.border,
@@ -549,124 +563,116 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildAccountsSection(String userId) {
-    return StreamBuilder<List<Account>>(
-      stream: _accountService.getAccounts(userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        
-        final accounts = snapshot.data ?? [];
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    // Use cached accounts instead of StreamBuilder
+    final accounts = _cachedAccounts;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Text(
+              'Your Accounts',
+              style: AppTextStyles.titleLarge.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                // Navigate to accounts screen (index 1)
+                HapticFeedback.light();
+                widget.onNavigateToScreen?.call(1);
+              },
+              icon: const Icon(Icons.arrow_forward_ios, size: 16),
+              label: const Text('View All'),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        
+        if (accounts.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.border,
+                width: 1,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Icon(
+                  Icons.account_balance_wallet_outlined,
+                  size: 32,
+                  color: AppColors.onSurfaceVariant,
+                ),
+                const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Your Accounts',
-                  style: AppTextStyles.titleLarge.copyWith(
-                    fontWeight: FontWeight.w600,
+                  'No accounts yet',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: AppColors.onSurfaceVariant,
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () {
-                    // Navigate to accounts screen (index 1)
-                    HapticFeedback.light();
-                    widget.onNavigateToScreen?.call(1);
-                  },
-                  icon: const Icon(Icons.arrow_forward_ios, size: 16),
-                  label: const Text('View All'),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Add your first account to get started',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
-            
-            if (accounts.isEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.border,
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.account_balance_wallet_outlined,
-                      size: 32,
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'No accounts yet',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Add your first account to get started',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              )
-            else
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.border,
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    // Show first 2 accounts in detail
-                    for (int i = 0; i < accounts.length && i < 2; i++) ...[
-                      _buildCompactAccountTile(accounts[i]),
-                      if (i < accounts.length - 1 && i < 1) 
-                        Divider(height: 1, indent: 16, endIndent: 16),
-                    ],
-                    // If more than 2 accounts, show a summary
-                    if (accounts.length > 2)
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.more_horiz,
-                              color: AppColors.onSurfaceVariant,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${accounts.length - 2} more accounts',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
+          )
+        else
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.border,
+                width: 1,
               ),
-          ],
-        );
-      },
+            ),
+            child: Column(
+              children: [
+                // Show first 2 accounts in detail
+                for (int i = 0; i < accounts.length && i < 2; i++) ...[
+                  _buildCompactAccountTile(accounts[i]),
+                  if (i < accounts.length - 1 && i < 1) 
+                    Divider(height: 1, indent: 16, endIndent: 16),
+                ],
+                // If more than 2 accounts, show a summary
+                if (accounts.length > 2)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.more_horiz,
+                          color: AppColors.onSurfaceVariant,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${accounts.length - 2} more accounts',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../utils/animation_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
@@ -39,13 +38,14 @@ class _AnimatedBalanceState extends State<AnimatedBalance>
       duration: widget.animationDuration,
       vsync: this,
     );
-    _balanceAnimation = AnimationUtils.createCounterAnimation(
-      vsync: this,
-      from: _previousBalance,
-      to: widget.balance,
-      duration: widget.animationDuration,
+    _balanceAnimation = Tween<double>(
+      begin: _previousBalance,
+      end: widget.balance,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
       curve: widget.animationCurve,
-    );
+    ));
+    _animationController.forward();
   }
 
   @override
@@ -53,19 +53,23 @@ class _AnimatedBalanceState extends State<AnimatedBalance>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.balance != widget.balance) {
       _previousBalance = oldWidget.balance;
-      _balanceAnimation = AnimationUtils.createCounterAnimation(
-        vsync: this,
-        from: _previousBalance,
-        to: widget.balance,
-        duration: widget.animationDuration,
+      // Stop any ongoing animation before creating a new one
+      _animationController.stop();
+      _balanceAnimation = Tween<double>(
+        begin: _previousBalance,
+        end: widget.balance,
+      ).animate(CurvedAnimation(
+        parent: _animationController,
         curve: widget.animationCurve,
-      );
+      ));
       _animationController.forward(from: 0);
     }
   }
 
   @override
   void dispose() {
+    // Stop the animation before disposing
+    _animationController.stop();
     _animationController.dispose();
     super.dispose();
   }
