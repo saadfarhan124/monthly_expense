@@ -7,6 +7,7 @@ import 'features/auth/presentation/auth_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/accounts/presentation/accounts_screen.dart';
 import 'features/transactions/presentation/transactions_screen.dart';
+import 'features/transactions/presentation/transfer_screen.dart';
 import 'features/categories/presentation/categories_screen.dart';
 import 'features/budgets/presentation/budgets_screen.dart';
 
@@ -140,6 +141,17 @@ class _MainNavScreenState extends State<MainNavScreen> {
               onTap: () {
                 setState(() => _selectedIndex = 2);
                 Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.swap_horiz_outlined),
+              title: const Text('Transfer Money'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TransferScreen()),
+                );
               },
             ),
             ListTile(

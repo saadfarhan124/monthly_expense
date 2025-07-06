@@ -26,7 +26,6 @@ class BudgetRepository {
       }
       return null;
     } catch (e) {
-      print('Error getting budget: $e');
       return null;
     }
   }
@@ -48,26 +47,22 @@ class BudgetRepository {
   // Get active budgets for current period
   Stream<List<Budget>> getActiveBudgets(String userId) {
     final now = DateTime.now();
-    print('DEBUG: getActiveBudgets called for user: $userId, now: $now');
     return _firestore
         .collection('budgets')
         .where('userId', isEqualTo: userId)
         .where('isActive', isEqualTo: true)
         .snapshots()
         .handleError((error) {
-          print('DEBUG: Firestore query error: $error');
           // Return empty list on error instead of throwing
           return const Stream.empty();
         })
         .map((snapshot) {
-          print('DEBUG: Firestore returned ${snapshot.docs.length} documents');
           final budgets = snapshot.docs
               .map((doc) => Budget.fromFirestore(doc))
               .where((budget) => 
                   budget.startDate.isBefore(now.add(const Duration(days: 1))) &&
                   budget.endDate.isAfter(now.subtract(const Duration(days: 1))))
               .toList();
-          print('DEBUG: After date filtering: ${budgets.length} budgets');
           return budgets;
         });
   }
@@ -79,7 +74,6 @@ class BudgetRepository {
       final budgetWithId = budget.copyWith(id: docRef.id);
       await docRef.set(budgetWithId.toFirestore());
     } catch (e) {
-      print('Error adding budget: $e');
       rethrow;
     }
   }
@@ -93,7 +87,6 @@ class BudgetRepository {
           .doc(budget.id)
           .update(updatedBudget.toFirestore());
     } catch (e) {
-      print('Error updating budget: $e');
       rethrow;
     }
   }
@@ -109,7 +102,6 @@ class BudgetRepository {
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
     } catch (e) {
-      print('Error deleting budget: $e');
       rethrow;
     }
   }
@@ -119,7 +111,6 @@ class BudgetRepository {
     try {
       await _firestore.collection('budgets').doc(budgetId).delete();
     } catch (e) {
-      print('Error hard deleting budget: $e');
       rethrow;
     }
   }
@@ -140,7 +131,6 @@ class BudgetRepository {
       final snapshot = await query.get();
       return snapshot.docs.isNotEmpty;
     } catch (e) {
-      print('Error checking budget existence: $e');
       return false;
     }
   }
@@ -175,7 +165,6 @@ class BudgetRepository {
         'exceededCount': exceededCount,
       };
     } catch (e) {
-      print('Error getting budget statistics: $e');
       return {
         'totalBudget': 0.0,
         'activeCount': 0,

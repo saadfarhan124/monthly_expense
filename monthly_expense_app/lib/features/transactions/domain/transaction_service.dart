@@ -18,13 +18,17 @@ class TransactionService {
         throw Exception('Transaction not found');
       }
 
-      // Delete the transaction
-      await _repo.deleteTransaction(transactionId);
-      
-      // Update account balance (reverse the transaction effect)
-      await _reverseAccountBalance(transaction);
+      // If this is a transfer, handle it specially
+      if (transaction.type == TransactionType.transfer) {
+        await _deleteTransfer(transaction);
+      } else {
+        // Delete the transaction
+        await _repo.deleteTransaction(transactionId);
+        
+        // Update account balance (reverse the transaction effect)
+        await _reverseAccountBalance(transaction);
+      }
     } catch (e) {
-      print('Error deleting transaction: $e');
       rethrow;
     }
   }
@@ -51,7 +55,6 @@ class TransactionService {
       
       return true;
     } catch (e) {
-      print('Error adding transaction: $e');
       rethrow;
     }
   }
@@ -68,7 +71,6 @@ class TransactionService {
       }
       return null;
     } catch (e) {
-      print('Error getting account: $e');
       return null;
     }
   }
@@ -85,7 +87,6 @@ class TransactionService {
       }
       return null;
     } catch (e) {
-      print('Error getting transaction: $e');
       return null;
     }
   }
@@ -108,7 +109,7 @@ class TransactionService {
           .doc(transaction.accountId)
           .update({'balance': newBalance});
     } catch (e) {
-      print('Error reversing account balance: $e');
+      rethrow;
     }
   }
 
@@ -129,7 +130,70 @@ class TransactionService {
           .doc(transaction.accountId)
           .update({'balance': newBalance});
     } catch (e) {
-      print('Error updating account balance: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _deleteTransfer(TransactionModel transfer) async {
+    try {
+      // Get account details
+      final fromAccount = await _getAccount(transfer.accountId);
+      final toAccount = await _getAccount(transfer.toAccountId!);
+      
+      if (fromAccount == null || toAccount == null) {
+        throw Exception('One or both accounts not found');
+      }
+
+      // Calculate amounts to reverse
+      final isCrossCurrency = fromAccount.currency != toAccount.currency;
+      final destinationAmount = isCrossCurrency && transfer.exchangeRate != null
+          ? transfer.amount * transfer.exchangeRate!
+          : transfer.amount;
+      final effectiveAmount = transfer.amount + (transfer.transferFee ?? 0.0);
+
+      // Find and delete the associated fee transaction
+      if (transfer.transferFee != null && transfer.transferFee! > 0) {
+        await _deleteTransferFeeTransaction(transfer);
+      }
+
+      // Delete the transfer transaction
+      await _repo.deleteTransaction(transfer.id);
+
+      // Reverse account balances
+      await FirebaseFirestore.instance
+          .collection('accounts')
+          .doc(transfer.accountId)
+          .update({'balance': fromAccount.balance + effectiveAmount});
+
+      await FirebaseFirestore.instance
+          .collection('accounts')
+          .doc(transfer.toAccountId!)
+          .update({'balance': toAccount.balance - destinationAmount});
+
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> _deleteTransferFeeTransaction(TransactionModel transfer) async {
+    try {
+      // Find the fee transaction by looking for expense transactions with matching description
+      final feeDescription = 'Transfer fee for: ${transfer.description}';
+      
+      final query = await FirebaseFirestore.instance
+          .collection('transactions')
+          .where('accountId', isEqualTo: transfer.accountId)
+          .where('type', isEqualTo: 'expense')
+          .where('description', isEqualTo: feeDescription)
+          .where('amount', isEqualTo: transfer.transferFee)
+          .get();
+
+      if (query.docs.isNotEmpty) {
+        // Delete the fee transaction
+        await _repo.deleteTransaction(query.docs.first.id);
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 } 
